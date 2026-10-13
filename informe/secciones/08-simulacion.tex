@@ -1,0 +1,48 @@
+% ============================================================================
+%  7. Simulación en Proteus
+% ============================================================================
+\section{Simulación en Proteus}
+\label{sec:simulacion}
+
+Proteus no incluye un modelo del DRV8833 en su librería estándar, por lo que se
+simula con un \textbf{L293D}, que tiene la misma tabla de verdad por canal
+(IN1/IN2) y permite validar toda la lógica del firmware. Las diferencias de
+potencia (caída de voltaje, corriente máxima) solo se evalúan en el montaje
+real.
+
+\begin{table}[H]
+  \centering
+  \caption{Elementos y configuración de la simulación.}
+  \label{tab:proteus}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l L L@{}}
+    \toprule
+    \textbf{Elemento} & \textbf{Conexión} & \textbf{Configuración} \\
+    \midrule
+    PIC16F877A       & Program File = \texttt{.hex} de MPLAB X & Processor Clock Frequency = \SI{20}{\mega\hertz} (o \SI{4}{\mega\hertz}) \\
+    L293D            & IN1 = RC2, IN2 = RD0, IN3 = RC1, IN4 = RD1 & EN1 y EN2 a +\SI{5}{\volt}; VSS a +\SI{5}{\volt}; VS a la fuente de motores \\
+    2 $\times$ MOTOR (DC) & OUT1/OUT2 y OUT3/OUT4 & Motor izquierdo y derecho \\
+    OSCILLOSCOPE     & Canal A en RC2, canal B en RC1 & Medición de periodo y ciclo de trabajo \\
+    VIRTUAL TERMINAL & TXD $\rightarrow$ RC7, RXD $\rightarrow$ RC6 & 9600~baudios, 8N1 (reemplaza al HC-05) \\
+    RES + BUTTON     & MCLR con \SI{10}{\kilo\ohm} a +\SI{5}{\volt} & Reset \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Procedimiento de prueba}
+
+\begin{enumerate}
+  \item Compilar en MPLAB X con \texttt{MODO\_BLUETOOTH 0} y cargar el
+        \texttt{.hex}.
+  \item Verificar con el osciloscopio un periodo de \SI{800}{\micro\second} en
+        RC2 y RC1, y el crecimiento del ciclo de trabajo durante las rampas.
+  \item Observar el sentido de giro de los motores en cada etapa de la
+        secuencia.
+  \item Compilar con \texttt{MODO\_BLUETOOTH 1}, escribir \texttt{F},
+        \texttt{B}, \texttt{L}, \texttt{R}, \texttt{S} y \texttt{0}--\texttt{9}
+        en la terminal virtual y comprobar la respuesta y el eco.
+\end{enumerate}
+
+\figurapendiente{Esquemático del circuito en Proteus}{fig:proteus-esquematico}
+\figurapendiente{Osciloscopio con PWM al 25\,\%, 50\,\% y 75\,\%}{fig:proteus-pwm}
+\figurapendiente{Terminal virtual con comandos y eco}{fig:proteus-terminal}

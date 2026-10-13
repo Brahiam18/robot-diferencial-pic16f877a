@@ -1,0 +1,41 @@
+% ============================================================================
+%  9. Decisiones de diseño y discrepancias resueltas
+% ============================================================================
+\section{Decisiones de diseño y discrepancias resueltas}
+\label{sec:decisiones}
+
+Al contrastar la guía del taller con las hojas de datos se encontraron cinco
+puntos que, sin resolverse, habrían afectado el funcionamiento o la evaluación
+(tabla~\ref{tab:decisiones}).
+
+\begin{table}[H]
+  \centering
+  \caption{Hallazgos y decisiones de diseño.}
+  \label{tab:decisiones}
+  \small
+  \begin{tabularx}{\textwidth}{@{}c L L L@{}}
+    \toprule
+    \textbf{\#} & \textbf{Hallazgo} & \textbf{Impacto} & \textbf{Decisión} \\
+    \midrule
+    1 & \SI{1.2}{\kilo\hertz} con \SI{20}{\mega\hertz} y prescaler 1:16 exige $PR2 = 259.4$, fuera del rango de 8~bits. &
+        Imposible de configurar. &
+        $PR2 = 249 \rightarrow \SI{1250}{\hertz}$ (error 4.2\,\%), con escala exacta de 1000 pasos (sección~\ref{sec:calculos}). \\
+    2 & La lista de materiales indica cristal de \SI{4}{\mega\hertz}; el código usa \SI{20}{\mega\hertz} (FOSC = HS). &
+        Con \SI{4}{\mega\hertz} el PWM baja a \SI{250}{\hertz} y los retardos se alargan 5 veces. &
+        Directiva \texttt{CRISTAL\_20MHZ} que ajusta FOSC, prescaler y SPBRG para ambos casos. \\
+    3 & La rúbrica evalúa el pulso de activación en nSLEEP, pero el código base no maneja ese pin. &
+        El driver depende de un pull-up del módulo o queda deshabilitado. &
+        nSLEEP en RD2, en 0 durante la configuración y flanco $0 \rightarrow 1$ con \texttt{DRV8833\_Wake()}. \\
+    4 & La rúbrica evalúa giro, pero la secuencia base solo tiene avance, reversa y freno. &
+        Criterio de demostración incompleto. &
+        Giro a la izquierda y a la derecha sobre su eje agregados a la secuencia. \\
+    5 & Capacitores de cristal de \SI{44}{\pico\farad} en la lista de materiales. &
+        Fuera del rango recomendado de 15 a \SI{33}{\pico\farad}; arranque del oscilador poco confiable. &
+        Usar \SI{22}{\pico\farad}, como en el esquemático. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+También se definió el sentido de giro según la convención física (izquierda =
+rotación antihoraria vista desde arriba), de modo que el comando y el
+movimiento observado coincidan durante la demostración.

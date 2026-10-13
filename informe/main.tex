@@ -1,0 +1,78 @@
+% ============================================================================
+%  Informe técnico - Robot móvil diferencial con PIC16F877A y DRV8833
+%  Taller Práctico II - Microcontroladores y Sistemas Embebidos
+%  Universidad de Ibagué
+%
+%  Compilar:  latexmk -pdf main.tex      (o pdflatex dos veces)
+%  En Overleaf: subir la carpeta completa y compilar main.tex con pdfLaTeX.
+% ============================================================================
+\documentclass[11pt,letterpaper]{article}
+
+% ---------- Idioma y codificación ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-nodecimaldot]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% ---------- Página ----------
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt}
+
+% ---------- Matemáticas y unidades ----------
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\sisetup{output-decimal-marker={.}, group-separator={\,}, per-mode=symbol}
+
+% ---------- Tablas y figuras ----------
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, fit, babel}  % babel: evita conflicto con el español
+
+% ---------- Código ----------
+\usepackage{xcolor}
+\usepackage{listings}
+
+% ---------- Enlaces (cargar al final) ----------
+\usepackage[hidelinks]{hyperref}
+
+% ============================================================================
+%  Configuración general
+% ============================================================================
+\input{config}
+
+% ============================================================================
+\begin{document}
+
+\input{secciones/00-portada}
+
+\tableofcontents
+\clearpage
+
+\input{secciones/01-resumen}
+\input{secciones/02-introduccion}
+\input{secciones/03-arquitectura}
+\input{secciones/04-potencia}
+\input{secciones/05-montaje}
+\input{secciones/06-calculos}
+\input{secciones/07-firmware}
+\input{secciones/08-simulacion}
+\input{secciones/09-pruebas}
+\input{secciones/10-decisiones}
+\input{secciones/11-conclusiones}
+\input{secciones/12-referencias}
+
+\appendix
+\input{secciones/A-codigo}
+
+\end{document}

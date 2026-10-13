@@ -1,0 +1,30 @@
+% ============================================================================
+%  Resumen
+% ============================================================================
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+
+Se diseñó e implementó el control de una plataforma móvil diferencial de dos
+motorreductores DC con un PIC16F877A y el doble puente H DRV8833. La velocidad
+de cada rueda se controla por PWM de hardware (CCP1 y CCP2 sincronizados con
+Timer2) a \textbf{\SI{1.25}{\kilo\hertz} con 1000 niveles de ciclo de trabajo
+($\approx$10~bits)}, y el sentido de giro y el frenado dinámico se gobiernan
+con dos líneas digitales de dirección.
+
+El firmware, escrito en C con MPLAB XC8, está organizado en tres capas
+(hardware, control por motor y navegación) y ofrece dos modos seleccionables en
+compilación: la secuencia automática de validación del taller (avance, reversa,
+giro y frenado con rampas) y el control remoto desde un celular por Bluetooth
+(HC-05/HC-06, UART a 9600~baudios, con interrupción de recepción y control de
+velocidad en 11 niveles).
+
+Durante el diseño se identificó que la frecuencia de \SI{1.2}{\kilo\hertz}
+pedida no es alcanzable con cristal de \SI{20}{\mega\hertz} y prescaler 1:16
+(exige $PR2 = 259 > 255$); se justifica el uso de \SI{1.25}{\kilo\hertz}.
+También se resolvieron la ausencia del pulso de habilitación nSLEEP y del giro
+en el código base, y la diferencia entre el cristal de la lista de materiales
+(\SI{4}{\mega\hertz}) y el del código (\SI{20}{\mega\hertz}).
+
+\medskip
+\noindent\textbf{Palabras clave:} PIC16F877A, DRV8833, PWM, Timer2, robótica
+móvil diferencial, puente H, UART, Bluetooth, MPLAB XC8, sistemas embebidos.

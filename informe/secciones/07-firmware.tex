@@ -1,0 +1,125 @@
+% ============================================================================
+%  6. Diseño del firmware
+% ============================================================================
+\section{Diseño del firmware}
+\label{sec:firmware}
+
+El firmware se organiza en tres capas: cada capa solo usa las funciones de la
+capa inferior, de modo que cambiar un pin o el driver obliga a tocar solo la
+capa de hardware. Dos directivas al inicio del archivo seleccionan en
+compilación el cristal y el modo de operación, sin duplicar código
+(código~\ref{lst:config}).
+
+\begin{lstlisting}[caption={Selección de cristal y modo de operación.}, label={lst:config}, numbers=none]
+#define CRISTAL_20MHZ   1   // 1 = 20 MHz (HS, 1:16) | 0 = 4 MHz (XT, 1:4)
+#define MODO_BLUETOOTH  0   // 0 = secuencia del taller | 1 = control por celular
+\end{lstlisting}
+
+\subsection{Funciones por capa}
+
+\begin{table}[H]
+  \centering
+  \caption{Funciones del firmware organizadas por capa.}
+  \label{tab:funciones}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l >{\ttfamily\raggedright\arraybackslash}p{4.6cm} L@{}}
+    \toprule
+    \textbf{Capa} & \textbf{\normalfont Función} & \textbf{Responsabilidad} \\
+    \midrule
+    Hardware     & PWM\_Init()                       & Configura TRIS, $PR2 = 249$, CCP1/CCP2 en PWM y Timer2; deja nSLEEP en 0. \\
+    Hardware     & DRV8833\_Wake()                   & Pulso $0 \rightarrow 1$ en nSLEEP y espera de arranque del driver. \\
+    Hardware     & Set\_Duty\_Motor\_Izq/\allowbreak Der()       & Satura a 1000 y reparte el valor de 10~bits entre CCPR$x$L y CCP$x$X:CCP$x$Y. \\
+    Motor        & Motor\_Izquierdo/\allowbreak Derecho(speed, dir) & Fija $x$IN2 y aplica PWM directo (avance) o invertido (reversa). \\
+    Motor        & Freno\_General()                  & $x$IN1 = $x$IN2 = 1 en ambos canales. \\
+    Motor        & Parada\_Libre()                   & $x$IN1 = $x$IN2 = 0; estado seguro al arrancar. \\
+    Navegación   & Mover(mov, v)                     & Traduce ADELANTE, ATRAS, IZQUIERDA, DERECHA o PARAR a órdenes por rueda. \\
+    Navegación   & Rampa\_Subir/Bajar(mov)           & Acelera o desacelera de 0 a 1000 en pasos de 50 cada \SI{100}{\milli\second}. \\
+    Comunicación & UART\_Init(), ISR                 & USART a 9600~baudios y recepción de comandos por interrupción. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Cinemática diferencial}
+
+\begin{table}[H]
+  \centering
+  \caption{Combinación de sentidos por rueda para cada movimiento.}
+  \label{tab:cinematica}
+  \begin{tabular}{@{}l l l l@{}}
+    \toprule
+    \textbf{Movimiento} & \textbf{Rueda izquierda} & \textbf{Rueda derecha} & \textbf{Resultado} \\
+    \midrule
+    Adelante  & Avance  & Avance  & Traslación hacia adelante \\
+    Atrás     & Reversa & Reversa & Traslación hacia atrás \\
+    Izquierda & Reversa & Avance  & Rotación antihoraria sobre su eje \\
+    Derecha   & Avance  & Reversa & Rotación horaria sobre su eje \\
+    Parar     & Freno   & Freno   & Detención con freno dinámico \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Se usa giro sobre el propio eje (ruedas en sentidos opuestos) en lugar de
+frenar una sola rueda: el radio de giro es cero, la maniobra es simétrica y la
+plataforma puede reorientarse en espacios reducidos.
+
+\subsection{Modo 0: secuencia de validación del taller}
+
+\begin{enumerate}
+  \item Avance con rampa de aceleración (0 $\rightarrow$ 1000 en 21 pasos de
+        \SI{100}{\milli\second}), \SI{1}{\second} a velocidad máxima y rampa de
+        desaceleración.
+  \item Freno dinámico durante \SI{500}{\milli\second}.
+  \item Reversa con las mismas rampas y freno de \SI{500}{\milli\second}.
+  \item Giro a la izquierda a velocidad 600 durante \SI{1}{\second} y freno de
+        \SI{500}{\milli\second}.
+  \item Giro a la derecha a velocidad 600 durante \SI{1}{\second}.
+  \item Freno total durante \SI{2}{\second} y repetición del ciclo.
+\end{enumerate}
+
+Las rampas limitan la corriente de arranque de los motores: un escalón de 0 a
+100\,\% exige al driver y a la batería la corriente de rotor bloqueado, y la
+caída de voltaje resultante es la causa típica de reinicios del
+microcontrolador, que la rúbrica penaliza.
+
+\subsection{Modo 1: control remoto por Bluetooth}
+
+\begin{table}[H]
+  \centering
+  \caption{Comandos aceptados por el modo Bluetooth.}
+  \label{tab:comandos}
+  \begin{tabular}{@{}l l@{}}
+    \toprule
+    \textbf{Comando} & \textbf{Acción} \\
+    \midrule
+    \texttt{F} / \texttt{B}     & Adelante / atrás \\
+    \texttt{L} / \texttt{R}     & Giro izquierda / derecha \\
+    \texttt{S}                  & Freno dinámico \\
+    \texttt{0} \dots\ \texttt{9} & Velocidad 0\,\% \dots\ 90\,\% \\
+    \texttt{q}                  & Velocidad 100\,\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Decisiones de diseño del modo remoto:
+\begin{itemize}
+  \item \textbf{Recepción por interrupción.} La ISR solo lee RCREG y actualiza
+        dos variables \texttt{volatile} (comando y velocidad); el lazo
+        principal aplica los cambios. Así no se pierden caracteres aunque el
+        programa esté en un retardo, y la ISR es corta.
+  \item \textbf{Recuperación de \emph{overrun}.} Si el búfer de dos bytes del
+        USART se desborda (OERR), se reinicia CREN; sin esto, la recepción
+        queda bloqueada para siempre.
+  \item \textbf{Lectura atómica.} La velocidad es de 16~bits y el PIC la lee en
+        dos accesos; el lazo deshabilita GIE durante la copia para no leer un
+        valor a medio actualizar.
+  \item \textbf{Freno antes de invertir.} Al cambiar de movimiento se aplica
+        freno dinámico \SI{50}{\milli\second} antes del nuevo sentido, lo que
+        evita el pico de corriente de invertir un motor en marcha.
+  \item \textbf{Eco.} Cada cambio de movimiento devuelve su letra al celular
+        como confirmación.
+  \item \textbf{Compatibilidad.} Las letras coinciden con la aplicación
+        \emph{Bluetooth RC Controller} (Android), que envía la letra mientras se
+        mantiene la flecha y \texttt{S} al soltarla.
+\end{itemize}
+
+El código completo se presenta en el anexo~\ref{anx:codigo}.

@@ -1,0 +1,49 @@
+% ============================================================================
+%  10. Conclusiones y trabajo futuro
+% ============================================================================
+\section{Conclusiones y trabajo futuro}
+\label{sec:conclusiones}
+
+\subsection{Conclusiones}
+
+\begin{itemize}
+  \item El uso de CCP1 y CCP2 con Timer2 como base de tiempo única genera dos
+        PWM de hardware de igual frecuencia y fase sin consumir tiempo de CPU,
+        lo que deja el lazo principal libre para la navegación y la
+        comunicación.
+  \item La justificación matemática demostró que la especificación de
+        \SI{1.2}{\kilo\hertz} no es alcanzable con \SI{20}{\mega\hertz} y
+        prescaler 1:16; elegir $PR2 = 249$ da \SI{1.25}{\kilo\hertz} y una
+        escala de 1000 pasos (0.1\,\%) que simplifica el firmware.
+  \item Aplicar PWM directo en avance e invertido en reversa con el DRV8833
+        permite controlar velocidad y sentido con solo dos líneas por motor, y
+        el freno dinámico detiene la plataforma más rápido que la parada libre.
+  \item Las rampas de aceleración, el freno previo a cada inversión y el
+        desacoplo del bus de potencia atacan la causa principal de reinicios
+        del microcontrolador: las caídas de voltaje por corriente de arranque.
+  \item La arquitectura en capas y la selección de modo en compilación
+        permitieron agregar el control Bluetooth sin modificar las funciones de
+        control de motores.
+\end{itemize}
+
+\subsection{Competencias aplicadas}
+
+Configuración de periféricos de microcontroladores (CCP, Timer2, USART,
+interrupciones), electrónica de potencia para motores DC, diseño de firmware
+embebido modular en C, comunicación serie inalámbrica, buenas prácticas de
+integridad de señal y alimentación, simulación de circuitos en Proteus y
+validación en hardware.
+
+\subsection{Trabajo futuro}
+
+\begin{itemize}
+  \item Lazo cerrado de velocidad con encoders en las ruedas y control PI, para
+        que el robot avance recto aunque los dos motores no sean idénticos.
+  \item Seguridad por pérdida de enlace: detener el robot si no llegan
+        comandos Bluetooth durante un tiempo definido.
+  \item Giros suaves con velocidades distintas por rueda (giro con radio),
+        además del giro sobre el eje.
+  \item Medición del voltaje de batería con el ADC para alertar carga baja.
+  \item Migración del montaje de protoboard a una PCB a partir del
+        esquemático.
+\end{itemize}

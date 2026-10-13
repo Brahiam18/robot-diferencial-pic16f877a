@@ -1,0 +1,56 @@
+% ============================================================================
+%  8. Pruebas y resultados
+% ============================================================================
+\section{Pruebas y resultados}
+\label{sec:pruebas}
+
+Las tablas recogen el valor esperado de cada prueba según la
+sección~\ref{sec:calculos} y dejan las columnas de medición para completar en
+simulación y en hardware real.
+% Para llenar: reemplazar cada \pendiente{...} por el valor medido y
+% "Pendiente" por "Cumple" o "No cumple".
+
+\subsection{Mediciones de PWM (cristal de 20 MHz)}
+
+\begin{table}[H]
+  \centering
+  \caption{Mediciones eléctricas esperadas y obtenidas.}
+  \label{tab:mediciones}
+  \small
+  \begin{tabularx}{\textwidth}{@{}L >{\raggedright\arraybackslash}p{3.0cm} c c c@{}}
+    \toprule
+    \textbf{Prueba} & \textbf{Esperado} & \textbf{Proteus} & \textbf{Hardware} & \textbf{Resultado} \\
+    \midrule
+    Frecuencia PWM en RC2               & \SI{1250}{\hertz}                 & \pendiente{} & \pendiente{} & Pendiente \\
+    Frecuencia PWM en RC1               & \SI{1250}{\hertz}                 & \pendiente{} & \pendiente{} & Pendiente \\
+    $T_{on}$ con $DC = 250$             & \SI{200}{\micro\second} (25\,\%) & \pendiente{} & \pendiente{} & Pendiente \\
+    $T_{on}$ con $DC = 500$             & \SI{400}{\micro\second} (50\,\%) & \pendiente{} & \pendiente{} & Pendiente \\
+    $T_{on}$ con $DC = 750$             & \SI{600}{\micro\second} (75\,\%) & \pendiente{} & \pendiente{} & Pendiente \\
+    Duración de rampa 0 $\rightarrow$ 1000 & \SI{2.1}{\second} (21 pasos)  & \pendiente{} & \pendiente{} & Pendiente \\
+    Voltaje en VM con motores girando   & $\leq$ \SI{10}{\volt}            & ---          & \pendiente{} & Pendiente \\
+    VDD del PIC al arrancar motores     & \SI{5}{\volt} $\pm$ \SI{0.25}{\volt} & ---       & \pendiente{} & Pendiente \\
+    Pulso en nSLEEP al encender         & Flanco $0 \rightarrow 1$ tras configurar PWM & \pendiente{} & \pendiente{} & Pendiente \\
+    UART: comando \texttt{F} con eco    & Avance y eco \texttt{F}          & \pendiente{} & \pendiente{} & Pendiente \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Demostración funcional (rúbrica, criterio 4)}
+
+\begin{table}[H]
+  \centering
+  \caption{Validación de maniobras en hardware real.}
+  \label{tab:demostracion}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l L L c@{}}
+    \toprule
+    \textbf{Maniobra} & \textbf{Comportamiento esperado} & \textbf{Observación} & \textbf{Resultado} \\
+    \midrule
+    Avance         & Ambas ruedas hacia adelante, aceleración suave & \pendiente{} & Pendiente \\
+    Reversa        & Ambas ruedas hacia atrás, aceleración suave    & \pendiente{} & Pendiente \\
+    Giro izquierda & Rotación antihoraria sobre su eje              & \pendiente{} & Pendiente \\
+    Giro derecha   & Rotación horaria sobre su eje                  & \pendiente{} & Pendiente \\
+    Freno          & Detención rápida sin reinicio del PIC          & \pendiente{} & Pendiente \\
+    \bottomrule
+  \end{tabularx}
+\end{table}

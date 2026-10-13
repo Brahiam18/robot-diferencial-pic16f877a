@@ -1,0 +1,92 @@
+% ============================================================================
+%  config.tex - Datos del informe, colores, estilos y macros
+% ============================================================================
+
+% ---------- Datos del documento (editar aquí) ----------
+\newcommand{\titulo}{Robot móvil diferencial con PIC16F877A y DRV8833}
+\newcommand{\subtitulo}{Taller Práctico II: Control dual de motores y robótica móvil diferencial}
+\newcommand{\asignatura}{Microcontroladores y Sistemas Embebidos}
+\newcommand{\programa}{Programa de Ingeniería Electrónica}
+\newcommand{\facultad}{Facultad de Ingeniería}
+\newcommand{\universidad}{Universidad de Ibagué}
+\newcommand{\docente}{\pendiente{Nombre del docente}}
+\newcommand{\fecha}{Octubre de 2026}
+\newcommand{\versiondoc}{0.1 (borrador)}
+
+% ---------- Colores ----------
+\definecolor{acento}{RGB}{0,61,121}       % azul institucional aprox.
+\definecolor{acentoclaro}{RGB}{220,232,245}
+\definecolor{gris}{RGB}{110,110,110}
+\definecolor{codigofondo}{RGB}{247,247,247}
+\definecolor{codigocomentario}{RGB}{0,128,0}
+\definecolor{codigoclave}{RGB}{0,0,170}
+\definecolor{codigocadena}{RGB}{163,21,21}
+\definecolor{pendientecolor}{RGB}{200,0,0}
+
+% ---------- Marcas de contenido pendiente ----------
+% Uso: \pendiente{qué falta}. Buscar "\pendiente" para ver lo que falta.
+\newcommand{\pendiente}[1]{\textcolor{pendientecolor}{\textit{[#1]}}}
+
+% Recuadro para fotografías o capturas que aún no se han agregado.
+% Uso: \figurapendiente{descripción}{etiqueta}
+\newcommand{\figurapendiente}[2]{%
+  \begin{figure}[H]
+    \centering
+    \fbox{\parbox[c][4cm][c]{0.8\textwidth}{\centering\pendiente{Agregar: #1}}}
+    \caption{#1}
+    \label{#2}
+  \end{figure}}
+
+% ---------- Encabezado y pie ----------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gris}\asignatura}
+\fancyhead[R]{\small\color{gris}\universidad}
+\fancyfoot[L]{\small\color{gris}Versión \versiondoc}
+\fancyfoot[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+
+% ---------- Títulos de sección ----------
+\titleformat{\section}{\Large\bfseries\color{acento}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{acento}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{18pt}{8pt}
+\titlespacing*{\subsection}{0pt}{12pt}{6pt}
+
+% ---------- Tablas ----------
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+
+% ---------- Listados de código ----------
+\lstdefinestyle{c-xc8}{
+  language=C,
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codigofondo},
+  commentstyle=\color{codigocomentario},
+  keywordstyle=\color{codigoclave}\bfseries,
+  stringstyle=\color{codigocadena},
+  morekeywords={__interrupt, volatile, __delay_ms},
+  numbers=left,
+  numberstyle=\tiny\color{gris},
+  numbersep=8pt,
+  frame=single,
+  rulecolor=\color{gris!40},
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  tabsize=4,
+  xleftmargin=1.5em,
+  framexleftmargin=1.5em,
+  captionpos=t
+}
+\lstset{style=c-xc8}
+\renewcommand{\lstlistingname}{Código}
+\renewcommand{\lstlistlistingname}{Índice de códigos}
+
+% ---------- Metadatos del PDF ----------
+\hypersetup{
+  pdftitle={\titulo},
+  pdfsubject={\subtitulo},
+  pdfkeywords={PIC16F877A, DRV8833, PWM, robótica móvil, XC8}
+}

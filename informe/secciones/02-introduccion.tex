@@ -1,0 +1,31 @@
+% ============================================================================
+%  1. Introducción y objetivos
+% ============================================================================
+\section{Introducción y objetivos}
+\label{sec:introduccion}
+
+Un robot móvil diferencial se desplaza y orienta variando solo la velocidad y
+el sentido de sus dos ruedas motrices: misma velocidad y sentido produce
+traslación, sentidos opuestos producen rotación sobre su eje. Esta
+arquitectura es la base de robots de servicio, AGV industriales y plataformas
+de competencia, y exige controlar dos motores DC de forma independiente y
+sincronizada.
+
+\subsection*{Objetivo general}
+Implementar el control de velocidad, sentido de giro y frenado de una
+plataforma móvil diferencial con un PIC16F877A y un driver DRV8833, validado en
+simulación y en hardware real.
+
+\subsection*{Objetivos específicos}
+\begin{enumerate}
+  \item Configurar y sincronizar los módulos CCP1 (RC2) y CCP2 (RC1) en modo
+        PWM con Timer2 como base de tiempo única.
+  \item Integrar el DRV8833 para gobernar velocidad, sentido de giro y frenado
+        dinámico de dos motores DC.
+  \item Aplicar normas de montaje en protoboard: masa común, habilitación por
+        nSLEEP y supresión de ruido inductivo ($dI/dt$).
+  \item Desarrollar firmware modular en MPLAB XC8 para la navegación de la
+        plataforma.
+  \item \emph{(Extensión del grupo)} Agregar control remoto desde un celular
+        mediante un módulo Bluetooth serie.
+\end{enumerate}

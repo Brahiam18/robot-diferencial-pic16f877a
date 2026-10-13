@@ -1,0 +1,60 @@
+% ============================================================================
+%  3. Etapa de potencia: DRV8833
+% ============================================================================
+\section{Etapa de potencia: DRV8833}
+\label{sec:potencia}
+
+El DRV8833 integra dos puentes H de MOSFET que operan entre \SI{2.7}{\volt} y
+\SI{10.8}{\volt} con hasta \SI{1.5}{\ampere} continuos por canal. Cada motor
+se controla con dos entradas ($x$IN1, $x$IN2), según la tabla~\ref{tab:drv}.
+
+\begin{table}[H]
+  \centering
+  \caption{Tabla de verdad del DRV8833 por canal.}
+  \label{tab:drv}
+  \begin{tabular}{@{}c c l l@{}}
+    \toprule
+    \textbf{$x$IN1} & \textbf{$x$IN2} & \textbf{Salidas ($x$OUT1 / $x$OUT2)} & \textbf{Modo} \\
+    \midrule
+    0 & 0 & Alta impedancia & Parada libre (\emph{coast}) \\
+    1 & 0 & Vmotor / GND    & Avance \\
+    0 & 1 & GND / Vmotor    & Reversa \\
+    1 & 1 & GND / GND       & Freno dinámico (\emph{slow decay}) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Por qué DRV8833 y no L298N}
+
+El L298N usa transistores bipolares en Darlington y pierde cerca de
+\SI{2}{\volt} o más entre sus salidas; con una batería de 6 a \SI{10}{\volt}
+eso es una fracción grande del voltaje del motor y se disipa como calor, por lo
+que necesita disipador. El DRV8833 usa MOSFET de baja resistencia de
+encendido: la caída es mucho menor, el motor recibe casi todo el voltaje de la
+batería y el driver no requiere disipador volumétrico.
+
+\subsection{Aplicación del PWM en cada sentido}
+
+\begin{itemize}
+  \item \textbf{Avance:} $x$IN2 = 0 fijo y PWM en $x$IN1. El driver alterna
+        entre 10 (avance) y 00 (parada libre, decaimiento rápido). La velocidad
+        es proporcional al ciclo de trabajo $D$.
+  \item \textbf{Reversa:} $x$IN2 = 1 fijo y PWM en $x$IN1 con ciclo invertido
+        ($1000 - \text{velocidad}$). El driver alterna entre 01 (reversa) y 11
+        (freno, decaimiento lento). El tiempo en reversa es la fracción en bajo
+        del PWM; por eso se invierte el ciclo: velocidad 700 $\rightarrow$
+        duty 300 $\rightarrow$ 70\,\% del periodo en reversa.
+  \item \textbf{Freno dinámico:} $x$IN1 = $x$IN2 = 1. Ambos terminales del
+        motor quedan a GND, la fuerza contraelectromotriz circula por los
+        MOSFET inferiores y el motor se detiene mucho más rápido que en parada
+        libre.
+\end{itemize}
+
+\subsection{Habilitación nSLEEP}
+
+Con nSLEEP en 0 el driver entra en bajo consumo y sus salidas quedan en alta
+impedancia. El firmware lo mantiene en 0 mientras configura PWM y pines, y
+luego aplica el flanco $0 \rightarrow 1$ con una espera de unos milisegundos
+(tiempo de arranque del driver, del orden de \SI{1}{\milli\second}). Así,
+ningún estado transitorio de los pines durante el reinicio del PIC mueve los
+motores.

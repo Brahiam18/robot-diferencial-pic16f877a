@@ -1,0 +1,125 @@
+% ============================================================================
+%  5. Justificación matemática
+% ============================================================================
+\section{Justificación matemática}
+\label{sec:calculos}
+
+Con cristal de \SI{20}{\mega\hertz}, prescaler 1:16 y $PR2 = 249$, el PWM
+opera a \textbf{\SI{1250}{\hertz} con 1000 niveles de ciclo de trabajo
+(\num{9.97}~bits)}. Los \SI{1.2}{\kilo\hertz} pedidos no son alcanzables con
+esa configuración.
+
+\subsection{Ciclo de instrucción}
+
+El PIC16F877A ejecuta una instrucción cada 4 ciclos de reloj:
+\begin{align}
+  T_{osc} &= \frac{1}{F_{osc}} = \frac{1}{\SI{20}{\mega\hertz}} = \SI{50}{\nano\second} \\
+  T_{cy}  &= 4\,T_{osc} = \SI{200}{\nano\second}
+  \qquad\Rightarrow\qquad F_{cy} = \SI{5}{\mega\hertz}
+\end{align}
+
+\subsection{Registro PR2 para 1.2 kHz}
+
+El periodo del PWM lo fija Timer2, que se reinicia al igualar a PR2:
+\begin{equation}
+  T_{PWM} = (PR2 + 1)\cdot 4\,T_{osc}\cdot \text{Pre}
+  \qquad\Rightarrow\qquad
+  PR2 = \frac{F_{osc}}{4\cdot \text{Pre}\cdot F_{PWM}} - 1
+  \label{eq:pr2}
+\end{equation}
+\begin{equation}
+  PR2 = \frac{\num{20000000}}{4\cdot 16\cdot 1200} - 1 = 260.42 - 1 = 259.42
+\end{equation}
+
+PR2 es un registro de 8~bits (máximo 255), por lo que \textbf{259.42 no se
+puede cargar}. La frecuencia mínima posible con \SI{20}{\mega\hertz} y
+prescaler 1:16 es:
+\begin{equation}
+  F_{PWM,\min} = \frac{\num{20000000}}{4\cdot 16\cdot 256} = \SI{1220.7}{\hertz}
+\end{equation}
+
+El prescaler del Timer2 no puede superar 1:16 en el PIC16F877A, así que
+\SI{1.2}{\kilo\hertz} exacto es inalcanzable con este cristal. Se elige
+$\mathbf{PR2 = 249}$:
+\begin{equation}
+  F_{PWM} = \frac{\num{20000000}}{4\cdot 16\cdot 250} = \SI{1250}{\hertz}
+  \qquad
+  T_{PWM} = \SI{800}{\micro\second}
+\end{equation}
+
+El error frente a \SI{1.2}{\kilo\hertz} es de 4.2\,\%. Con $PR2 = 255$ se
+obtendría \SI{1220.7}{\hertz} (1.7\,\% de error), pero se prefiere 249 porque
+deja exactamente 1000 cuentas por periodo: el ciclo de trabajo se escribe
+directamente en escala 0--1000 (décimas de porcentaje) sin conversiones.
+Además, \SI{1.25}{\kilo\hertz} está en el rango típico de PWM para
+motorreductores pequeños: la inductancia del motor filtra la corriente y el
+control es estable a baja velocidad.
+
+\subsection{Ciclo de trabajo y resolución de 10 bits}
+
+El ciclo de trabajo es un valor de 10~bits: 8~bits en CCPR$x$L y 2~bits en
+CCP$x$CON$\langle5{:}4\rangle$ (CCP$x$X, CCP$x$Y).
+\begin{equation}
+  T_{on} = DC\cdot T_{osc}\cdot \text{Pre} = DC\cdot \SI{50}{\nano\second}\cdot 16
+         = DC\cdot \SI{0.8}{\micro\second}
+\end{equation}
+\begin{equation}
+  \text{Pasos} = 4\,(PR2+1) = 1000
+  \qquad
+  \text{Resolución} = \log_2(1000) = \num{9.97}~\text{bits}
+  \qquad
+  \Delta D = \SI{0.1}{\percent}
+\end{equation}
+
+\begin{table}[H]
+  \centering
+  \caption{Distribución del ciclo de trabajo en los registros del módulo CCP.}
+  \label{tab:duty}
+  \begin{tabular}{@{}r r c r r@{}}
+    \toprule
+    \textbf{$DC$} & \textbf{CCPR$x$L} & \textbf{CCP$x$X:CCP$x$Y} & \textbf{$T_{on}$} & \textbf{Ciclo} \\
+    \midrule
+    0    & 0   & 00 & \SI{0}{\micro\second}   & 0\,\%   \\
+    250  & 62  & 10 & \SI{200}{\micro\second} & 25\,\%  \\
+    500  & 125 & 00 & \SI{400}{\micro\second} & 50\,\%  \\
+    750  & 187 & 10 & \SI{600}{\micro\second} & 75\,\%  \\
+    1000 & 250 & 00 & \SI{800}{\micro\second} & 100\,\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Caso con cristal de 4 MHz}
+
+Si se monta el cristal de \SI{4}{\mega\hertz} de la lista de materiales con la
+configuración anterior, el PWM cae a
+$\SI{4}{\mega\hertz} / (64 \cdot 250) = \SI{250}{\hertz}$: frecuencia audible y
+par irregular a baja velocidad. Para conservar $PR2 = 249$ y la escala 0--1000
+se usa prescaler 1:4:
+\begin{equation}
+  F_{PWM} = \frac{\num{4000000}}{4\cdot 4\cdot 250} = \SI{1000}{\hertz}
+  \qquad
+  T_{cy} = \SI{1}{\micro\second}
+\end{equation}
+
+\subsection{Velocidad de la UART (Bluetooth)}
+
+Con BRGH = 1 (alta velocidad):
+\begin{equation}
+  \text{Baud} = \frac{F_{osc}}{16\,(SPBRG + 1)}
+\end{equation}
+
+\begin{table}[H]
+  \centering
+  \caption{Configuración de SPBRG para 9600 baudios.}
+  \label{tab:uart}
+  \begin{tabular}{@{}l r r r@{}}
+    \toprule
+    \textbf{Cristal} & \textbf{SPBRG} & \textbf{Baud real} & \textbf{Error vs 9600} \\
+    \midrule
+    \SI{20}{\mega\hertz} & 129 & 9615 & +0.16\,\% \\
+    \SI{4}{\mega\hertz}  & 25  & 9615 & +0.16\,\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Un error menor a $\pm$2\,\% es aceptable para comunicación asíncrona de 8~bits.

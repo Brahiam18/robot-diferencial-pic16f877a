@@ -1,0 +1,29 @@
+# Archivos auxiliares de LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.bbl
+*.blg
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# PDF generado (quitar esta línea si se quiere versionar el PDF)
+main.pdf
+
+# Proyecto de MPLAB X
+*.X/build/
+*.X/dist/
+*.X/nbproject/private/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
