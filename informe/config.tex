@@ -14,13 +14,13 @@
 \newcommand{\versiondoc}{0.2 (borrador)}
 
 % ---------- Colores ----------
-\definecolor{acento}{RGB}{0,61,121}       % azul institucional aprox.
-\definecolor{acentoclaro}{RGB}{220,232,245}
+\definecolor{acento}{RGB}{0,0,0}          % titulos y reglas en negro
+\definecolor{acentoclaro}{RGB}{236,236,236} % relleno gris claro en figuras
 \definecolor{gris}{RGB}{110,110,110}
 \definecolor{codigofondo}{RGB}{247,247,247}
-\definecolor{codigocomentario}{RGB}{0,128,0}
-\definecolor{codigoclave}{RGB}{0,0,170}
-\definecolor{codigocadena}{RGB}{163,21,21}
+\definecolor{codigocomentario}{RGB}{100,100,100}
+\definecolor{codigoclave}{RGB}{0,0,0}
+\definecolor{codigocadena}{RGB}{60,60,60}
 \definecolor{pendientecolor}{RGB}{200,0,0}
 
 % ---------- Marcas de contenido pendiente ----------
@@ -63,7 +63,7 @@
   language=C,
   basicstyle=\ttfamily\footnotesize,
   backgroundcolor=\color{codigofondo},
-  commentstyle=\color{codigocomentario},
+  commentstyle=\color{codigocomentario}\itshape,
   keywordstyle=\color{codigoclave}\bfseries,
   stringstyle=\color{codigocadena},
   morekeywords={__interrupt, volatile, __delay_ms},
