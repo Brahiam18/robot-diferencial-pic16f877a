@@ -18,6 +18,7 @@
 
 # PDF generado (quitar esta línea si se quiere versionar el PDF)
 main.pdf
+informe_docente.pdf
 
 # Proyecto de MPLAB X
 *.X/build/

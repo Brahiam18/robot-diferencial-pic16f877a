@@ -6,43 +6,53 @@
 
 El sistema separa la lógica (\SI{5}{\volt} regulados por el LM7805) de la
 potencia (batería de hasta \SI{10}{\volt} hacia el VM del DRV8833), unidas solo
-por una masa común. El PIC genera cinco señales hacia el driver: dos PWM de
-hardware para la velocidad, dos líneas de dirección y la habilitación nSLEEP
+por una masa común. El PIC genera cuatro señales hacia el driver: dos PWM de
+hardware para la velocidad y dos líneas de dirección. La habilitación nSLEEP
+(EEP en el módulo) se lleva a \SI{5}{\volt} por hardware, porque la tarjeta no
+la conecta al microcontrolador (sección~\ref{sec:eep}). El celular envía los
+comandos por Bluetooth al HC-05, que los entrega al PIC por la UART
 (figura~\ref{fig:arquitectura}).
 
 \begin{figure}[H]
   \centering
-  \input{figuras/arquitectura}
-  \caption{Arquitectura del sistema: control, potencia, actuadores y
-           comunicaciones.}
+  \resizebox{\textwidth}{!}{\input{figuras/arquitectura}}
+  \caption{Arquitectura del sistema implementado en la tarjeta del curso:
+           control, potencia, actuadores, comunicación y diagnóstico.}
   \label{fig:arquitectura}
 \end{figure}
 
 \subsection{Asignación de pines}
+
+La tabla~\ref{tab:pines} da cada pin con su número en los dos encapsulados
+usados: TQFP-44 (tarjeta) y DIP-40 (protoboard de la guía). Los números de la
+tarjeta se tomaron de su esquemático y de la hoja de datos del PIC16F877A.
 
 \begin{table}[H]
   \centering
   \caption{Asignación de pines del PIC16F877A y justificación.}
   \label{tab:pines}
   \small
-  \begin{tabularx}{\textwidth}{@{}l l l L@{}}
+  \begin{tabularx}{\textwidth}{@{}l c c l L@{}}
     \toprule
-    \textbf{Pin PIC} & \textbf{Función} & \textbf{Conectado a} & \textbf{Justificación} \\
+    \textbf{Pin PIC} & \textbf{TQFP} & \textbf{DIP} & \textbf{Conectado a} & \textbf{Justificación} \\
     \midrule
-    RC2 / CCP1 (17) & PWM motor izq.   & AIN1 & Único pin de salida del módulo CCP1; PWM por hardware sin carga de CPU. \\
-    RC1 / CCP2 (16) & PWM motor der.   & BIN1 & Único pin de salida de CCP2; comparte Timer2 con CCP1, así ambas ruedas tienen la misma frecuencia y fase. \\
-    RD0 (19)        & Dirección izq.   & AIN2 & Puerto D libre de funciones especiales que interfieran. \\
-    RD1 (20)        & Dirección der.   & BIN2 & Ídem. \\
-    RD2 (21)        & Habilitación     & nSLEEP & Permite dormir el driver hasta terminar la configuración y aplicar el pulso de activación. \\
-    RC6 / TX (25)   & UART TX          & RXD HC-05 & Pin fijo del USART; un divisor 1k/2k baja \SI{5}{\volt} a $\approx$\SI{3.3}{\volt}. \\
-    RC7 / RX (26)   & UART RX          & TXD HC-05 & Pin fijo del USART con interrupción de recepción. \\
-    RB6, RB7, MCLR  & ICSP             & PICkit 3 & Reservados para programar en circuito sin retirar el PIC. \\
+    RC2 / CCP1 & 36 & 17 & MIPWM (PWM izq.) & Único pin de salida del módulo CCP1; PWM por hardware sin carga de CPU. \\
+    RC1 / CCP2 & 35 & 16 & MDPWM (PWM der.) & Único pin de CCP2; comparte Timer2 con CCP1: ambas ruedas con la misma frecuencia y fase. \\
+    RD0        & 38 & 19 & MIPIN (dir. izq.) & Puerto D libre de funciones especiales. \\
+    RD1        & 39 & 20 & MDPIN (dir. der.) & Ídem. \\
+    RD2        & 40 & 21 & nSLEEP (protoboard) & En protoboard permite el pulso de activación; en la tarjeta no está ruteado. \\
+    RC7 / RX   & 1  & 26 & TXD del HC-05 & Pin fijo del USART, con interrupción de recepción. \\
+    RC6 / TX   & 44 & 25 & RXD del HC-05 & Pin fijo del USART; divisor 1k/2k a \SI{3.3}{\volt}. Opcional (solo eco). \\
+    RB5, RB4   & 15, 14 & 38, 37 & LED1, LED2 (\SI{330}{\ohm}) & LEDs de la tarjeta; se usan para diagnóstico. \\
+    RB3 / PGM  & 11 & 36 & LED3 (\SI{330}{\ohm}) & Usable como E/S solo con \texttt{LVP = OFF}. \\
+    MCLR, RB6, RB7 & 18, 16, 17 & 1, 39, 40 & ICSP (PICkit~3) & Reservados para programar en circuito. \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
 \subsection{Componentes principales}
 
-PIC16F877A, módulo DRV8833, dos motorreductores DC (caja amarilla tipo TT),
-módulo Bluetooth HC-05/HC-06, regulador LM7805, cristal de cuarzo, batería de
-máximo \SI{10}{\volt} DC y programador PICkit~3.
+PIC16F877A (TQFP-44 en la tarjeta), módulo DRV8833, dos motorreductores DC
+(caja amarilla tipo TT), módulo Bluetooth HC-05, regulador LM7805, cristal de
+\SI{20}{\mega\hertz}, batería de máximo \SI{10}{\volt} DC, programador PICkit~3
+y un celular Android con la aplicación Dabble.

@@ -4,16 +4,49 @@
 \section{Diseño del firmware}
 \label{sec:firmware}
 
-El firmware se organiza en tres capas: cada capa solo usa las funciones de la
-capa inferior, de modo que cambiar un pin o el driver obliga a tocar solo la
-capa de hardware. Dos directivas al inicio del archivo seleccionan en
-compilación el cristal y el modo de operación, sin duplicar código
-(código~\ref{lst:config}).
+El firmware se organiza en capas: cada capa solo usa las funciones de la capa
+inferior, de modo que cambiar un pin o el driver obliga a tocar solo la capa de
+hardware. Unas pocas directivas al inicio del archivo seleccionan en
+compilación el cristal, el modo de operación y los parámetros del control
+remoto, sin duplicar código (código~\ref{lst:config}).
 
-\begin{lstlisting}[caption={Selección de cristal y modo de operación.}, label={lst:config}, numbers=none]
-#define CRISTAL_20MHZ   1   // 1 = 20 MHz (HS, 1:16) | 0 = 4 MHz (XT, 1:4)
-#define MODO_BLUETOOTH  0   // 0 = secuencia del taller | 1 = control por celular
+\begin{lstlisting}[caption={Parámetros de compilación del firmware.}, label={lst:config}, numbers=none]
+#define CRISTAL_20MHZ   1    // 1 = 20 MHz (HS, 1:16) | 0 = 4 MHz (XT, 1:4)
+#define MODO_BLUETOOTH  1    // 0 = secuencia del taller | 1 = control por celular
+#define VEL_INICIAL   800    // Velocidad maxima inicial (0-1000)
+#define VEL_MINIMA    300    // PWM minimo para vencer la friccion del motor
+#define FAILSAFE_MS   500    // Freno por perdida de senal (0 = desactivado)
+#define BAUD_AUTO       1    // Deteccion automatica de baudios
+#define DIAGNOSTICO     1    // LEDs de diagnostico en RB5, RB4 y RB3
 \end{lstlisting}
+
+\subsection{Bits de configuración}
+
+La tabla~\ref{tab:config} compara los bits de configuración del código del
+docente con los del firmware final. Los dos cambios (watchdog y brown-out)
+responden a las fallas por alimentación observadas en la tarjeta
+(sección~\ref{sec:depuracion}).
+
+\begin{table}[H]
+  \centering
+  \caption{Bits de configuración (\emph{Configuration Word}, dirección 0x2007).}
+  \label{tab:config}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{4.1cm} c c L@{}}
+    \toprule
+    \textbf{Bit} & \textbf{Nombre} & \textbf{Docente} & \textbf{Final} & \textbf{Justificación} \\
+    \midrule
+    FOSC  & Oscillator Selection & HS & HS & Cristal de \SI{20}{\mega\hertz}. \\
+    WDTE  & Watchdog Timer Enable & OFF & \textbf{ON} & Reinicia el PIC si se bloquea; el lazo ejecuta \texttt{CLRWDT()}. \\
+    PWRTE & Power-up Timer Enable & ON & ON & Espera \SI{72}{\milli\second} a que VDD se estabilice. \\
+    BOREN & Brown-out Reset Enable & OFF & \textbf{ON} & Reinicio limpio si VDD $<$ \SI{4}{\volt}, en vez de un bloqueo. \\
+    LVP   & Low-Voltage Programming Enable & OFF & OFF & Libera RB3 (LED3) y evita entrar en programación por ruido. \\
+    CPD   & Data EEPROM Code Protection & OFF & OFF & No se usa la EEPROM. \\
+    WRT   & Flash Program Memory Write Enable & OFF & OFF & El programa no escribe su propia flash. \\
+    CP    & Flash Program Memory Code Protection & OFF & OFF & Permite leer y verificar lo grabado. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
 
 \subsection{Funciones por capa}
 
@@ -27,14 +60,15 @@ compilación el cristal y el modo de operación, sin duplicar código
     \textbf{Capa} & \textbf{\normalfont Función} & \textbf{Responsabilidad} \\
     \midrule
     Hardware     & PWM\_Init()                       & Configura TRIS, $PR2 = 249$, CCP1/CCP2 en PWM y Timer2; deja nSLEEP en 0. \\
-    Hardware     & DRV8833\_Wake()                   & Pulso $0 \rightarrow 1$ en nSLEEP y espera de arranque del driver. \\
-    Hardware     & Set\_Duty\_Motor\_Izq/\allowbreak Der()       & Satura a 1000 y reparte el valor de 10~bits entre CCPR$x$L y CCP$x$X:CCP$x$Y. \\
+    Hardware     & DRV8833\_Wake()                   & Pulso $0 \rightarrow 1$ en nSLEEP y espera de arranque (protoboard). \\
+    Hardware     & Set\_Duty\_Motor\_Izq/\allowbreak Der() & Satura a 1000 y reparte el valor de 10~bits entre CCPR$x$L y CCP$x$X:CCP$x$Y. \\
     Motor        & Motor\_Izquierdo/\allowbreak Derecho(speed, dir) & Fija $x$IN2 y aplica PWM directo (avance) o invertido (reversa). \\
-    Motor        & Freno\_General()                  & $x$IN1 = $x$IN2 = 1 en ambos canales. \\
-    Motor        & Parada\_Libre()                   & $x$IN1 = $x$IN2 = 0; estado seguro al arrancar. \\
-    Navegación   & Mover(mov, v)                     & Traduce ADELANTE, ATRAS, IZQUIERDA, DERECHA o PARAR a órdenes por rueda. \\
-    Navegación   & Rampa\_Subir/Bajar(mov)           & Acelera o desacelera de 0 a 1000 en pasos de 50 cada \SI{100}{\milli\second}. \\
-    Comunicación & UART\_Init(), ISR                 & USART a 9600~baudios y recepción de comandos por interrupción. \\
+    Motor        & Freno\_General(), Parada\_Libre() & $x$IN1 = $x$IN2 = 1 (freno) o 0 (parada libre). \\
+    Navegación   & Mover(mov, v), Rampa\_Subir/\allowbreak Bajar() & Secuencia del taller con rampas de aceleración. \\
+    Navegación   & Aplicar\_Ruedas(), Ajustar\_PWM() & Velocidad con signo por rueda, compensación de zona muerta y freno de \SI{30}{\milli\second} antes de invertir. \\
+    Comunicación & UART\_Init(), ISR, Procesar\_Byte() & UART por interrupción y decodificación de tramas de Dabble y letras. \\
+    Comunicación & Comando\_Gamepad(), Comando\_Letra() & Traduce cruceta, joystick, botones y letras a velocidades de rueda. \\
+    Protección   & Byte\_Invalido(), Failsafe\_1ms() & Detección automática de baudios y freno por pérdida de señal. \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -53,6 +87,7 @@ compilación el cristal y el modo de operación, sin duplicar código
     Atrás     & Reversa & Reversa & Traslación hacia atrás \\
     Izquierda & Reversa & Avance  & Rotación antihoraria sobre su eje \\
     Derecha   & Avance  & Reversa & Rotación horaria sobre su eje \\
+    Curva     & Avance lento & Avance & Arco hacia el lado de la rueda lenta \\
     Parar     & Freno   & Freno   & Detención con freno dinámico \\
     \bottomrule
   \end{tabular}
@@ -60,7 +95,9 @@ compilación el cristal y el modo de operación, sin duplicar código
 
 Se usa giro sobre el propio eje (ruedas en sentidos opuestos) en lugar de
 frenar una sola rueda: el radio de giro es cero, la maniobra es simétrica y la
-plataforma puede reorientarse en espacios reducidos.
+plataforma puede reorientarse en espacios reducidos. El giro con pivote (una
+rueda frenada y la otra en avance) se obtiene con
+\texttt{Motor\_X(0, 0)}, que deja $x$IN1 = $x$IN2 = 1.
 
 \subsection{Modo 0: secuencia de validación del taller}
 
@@ -81,45 +118,170 @@ Las rampas limitan la corriente de arranque de los motores: un escalón de 0 a
 caída de voltaje resultante es la causa típica de reinicios del
 microcontrolador, que la rúbrica penaliza.
 
-\subsection{Modo 1: control remoto por Bluetooth}
+\subsection{Modo 1: control desde el celular}
+
+El receptor acepta dos tipos de comandos por la UART: las tramas binarias del
+módulo \emph{Gamepad} de la aplicación Dabble y letras sueltas, para
+compatibilidad con aplicaciones de terminal.
+
+\paragraph{Protocolo de Dabble.} Se obtuvo de la librería oficial de STEMpedia.
+Cada evento del gamepad envía una trama de 8~bytes
+(tabla~\ref{tab:trama}). Los bytes de datos pueden valer 0xFF o 0x00, por lo
+que el receptor no puede buscar los delimitadores en cualquier posición: debe
+seguir la estructura de la trama campo por campo.
 
 \begin{table}[H]
   \centering
-  \caption{Comandos aceptados por el modo Bluetooth.}
-  \label{tab:comandos}
-  \begin{tabular}{@{}l l@{}}
+  \caption{Trama del módulo Gamepad de Dabble.}
+  \label{tab:trama}
+  \small
+  \begin{tabularx}{\textwidth}{@{}c c L@{}}
     \toprule
-    \textbf{Comando} & \textbf{Acción} \\
+    \textbf{Byte} & \textbf{Valor} & \textbf{Significado} \\
     \midrule
-    \texttt{F} / \texttt{B}     & Adelante / atrás \\
-    \texttt{L} / \texttt{R}     & Giro izquierda / derecha \\
-    \texttt{S}                  & Freno dinámico \\
-    \texttt{0} \dots\ \texttt{9} & Velocidad 0\,\% \dots\ 90\,\% \\
-    \texttt{q}                  & Velocidad 100\,\% \\
+    1 & 0xFF & Inicio de trama \\
+    2 & 0x01 & Módulo Gamepad \\
+    3 & 0x01 / 0x02 / 0x03 & Modo: cruceta digital / joystick / acelerómetro \\
+    4 & 0x01 & Número de argumentos \\
+    5 & 0x02 & Longitud del argumento \\
+    6 & botones & Bits: START 0, SELECT 1, $\triangle$ 2, $\bigcirc$ 3, $\times$ 4, $\square$ 5 \\
+    7 & dato & Cruceta: bits ARRIBA 0, ABAJO 1, IZQ 2, DER 3. Joystick: \texttt{AAAAARRR} (sección~\ref{sec:mezcla}) \\
+    8 & 0x00 & Fin de trama \\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
 \end{table}
 
-Decisiones de diseño del modo remoto:
-\begin{itemize}
-  \item \textbf{Recepción por interrupción.} La ISR solo lee RCREG y actualiza
-        dos variables \texttt{volatile} (comando y velocidad); el lazo
-        principal aplica los cambios. Así no se pierden caracteres aunque el
-        programa esté en un retardo, y la ISR es corta.
-  \item \textbf{Recuperación de \emph{overrun}.} Si el búfer de dos bytes del
-        USART se desborda (OERR), se reinicia CREN; sin esto, la recepción
-        queda bloqueada para siempre.
-  \item \textbf{Lectura atómica.} La velocidad es de 16~bits y el PIC la lee en
-        dos accesos; el lazo deshabilita GIE durante la copia para no leer un
-        valor a medio actualizar.
-  \item \textbf{Freno antes de invertir.} Al cambiar de movimiento se aplica
-        freno dinámico \SI{50}{\milli\second} antes del nuevo sentido, lo que
-        evita el pico de corriente de invertir un motor en marcha.
-  \item \textbf{Eco.} Cada cambio de movimiento devuelve su letra al celular
-        como confirmación.
-  \item \textbf{Compatibilidad.} Las letras coinciden con la aplicación
-        \emph{Bluetooth RC Controller} (Android), que envía la letra mientras se
-        mantiene la flecha y \texttt{S} al soltarla.
-\end{itemize}
+\begin{table}[H]
+  \centering
+  \caption{Comandos aceptados en el modo de control remoto.}
+  \label{tab:comandos}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l L@{}}
+    \toprule
+    \textbf{Entrada} & \textbf{Acción} \\
+    \midrule
+    Cruceta $\uparrow$ $\downarrow$ & Adelante / atrás \\
+    Cruceta $\leftarrow$ $\rightarrow$ & Giro sobre su eje \\
+    Cruceta en diagonal & Avance o reversa con curva (rueda interior al 40\,\%) \\
+    Joystick / acelerómetro & Velocidad y giro proporcionales (mezcla diferencial) \\
+    $\triangle$ / $\times$ / $\bigcirc$ & +10\,\% / $-$10\,\% / 100\,\% de velocidad (una vez por pulsación) \\
+    $\square$ (mantener) & Freno \\
+    Letras \texttt{F B L R S} & Adelante, atrás, izquierda, derecha, freno (con eco) \\
+    \texttt{0}--\texttt{9}, \texttt{q} & Velocidad 0--90\,\% y 100\,\% \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
 
-El código completo se presenta en el anexo~\ref{anx:codigo}.
+Al conectarse, Dabble puede pedir la identificación de la tarjeta (módulo 0x00,
+función 0x03); el firmware responde con la misma trama que la librería oficial
+usa para una tarjeta genérica.
+
+\paragraph{Máquina de estados del receptor.} La interrupción de la UART pasa
+cada byte a la función
+\texttt{Procesar\_Byte()}, que avanza por los estados de la
+figura~\ref{fig:parser}. La interrupción solo guarda los datos de la última
+trama y levanta una bandera; el lazo principal hace la mezcla y actualiza el
+PWM. Así la rutina de interrupción es corta y no llama a funciones que también
+usa el programa principal.
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[
+      font=\small, >={Stealth[length=2mm]},
+      est/.style={draw=acento, rounded corners=3pt, fill=acentoclaro, minimum width=2.0cm, minimum height=0.8cm, align=center},
+      fl/.style={->, draw=gris, line width=0.6pt},
+      lab/.style={font=\footnotesize, text=gris}]
+    \node[est] (libre) at (0,0)    {LIBRE};
+    \node[est] (mod)   at (3,0)    {MÓDULO};
+    \node[est] (fun)   at (6,0)    {FUNCIÓN};
+    \node[est] (nar)   at (9,0)    {N.\ ARGS};
+    \node[est] (fin)   at (0,-2.4) {FIN};
+    \node[est] (dat)   at (4.5,-2.4) {DATOS};
+    \node[est] (lar)   at (9,-2.4) {LARGO};
+    \draw[fl] (libre) -- node[lab, above] {0xFF} (mod);
+    \draw[fl] (mod) -- (fun);
+    \draw[fl] (fun) -- (nar);
+    \draw[fl] (nar) -- node[lab, right] {$n>0$} (lar);
+    \draw[fl] ($(lar.west)+(0,0.15)$) -- node[lab, above] {$\ell>0$} ($(dat.east)+(0,0.15)$);
+    \draw[fl] ($(dat.east)+(0,-0.15)$) -- node[lab, below] {otro argumento} ($(lar.west)+(0,-0.15)$);
+    \draw[fl] (dat) -- node[lab, above] {último dato} (fin);
+    \draw[fl] (fin) -- node[lab, left, align=right] {0x00:\\trama válida} (libre);
+    \draw[fl] (nar.east) -- ++(0.6,0) |- node[lab, below, pos=0.75] {$n=0$} ($(fin.south)+(0,-0.6)$) -- (fin.south);
+    \draw[fl] (libre.north west) ++(0.3,0) arc[start angle=0, end angle=270, radius=0.3] node[lab, left, xshift=-0.2cm] {otro byte: letra};
+  \end{tikzpicture}
+  \caption{Máquina de estados que decodifica las tramas de Dabble en la interrupción de la UART.}
+  \label{fig:parser}
+\end{figure}
+
+\subsection{Detección automática de baudios}
+\label{sec:autobaud}
+
+Los módulos HC-05 se venden configurados a distintas velocidades. Si la del
+módulo no coincide con la del PIC, los bytes llegan alterados y algunos
+coinciden por azar con letras de movimiento. El firmware cuenta los indicios de
+velocidad equivocada: un byte suelto que no es un comando (peso 1), un error de
+trama de la UART (peso 3) o una trama que no termina en 0x00 (peso 6). Cualquier
+trama o letra válida reinicia el contador. Al llegar a 24, la UART pasa a la
+siguiente velocidad de la tabla~\ref{tab:uart} y el LED3 da un destello corto.
+Una vez sincronizada, los datos válidos mantienen el contador en cero y la
+velocidad no vuelve a cambiar.
+
+\subsection{Freno por pérdida de señal}
+\label{sec:failsafe}
+
+Si el HC-05 se desconecta mientras el carro se mueve, el PIC deja de recibir
+órdenes y mantendría la última indefinidamente. Se implementaron dos
+mecanismos complementarios:
+
+\begin{enumerate}
+  \item \textbf{Caída de la línea serial.} Cuando el HC-05 se reinicia, su
+        salida TX cae a \SI{0}{\volt} y la UART del PIC registra errores de
+        trama consecutivos. Con tres errores seguidos el carro frena de
+        inmediato. Un error aislado se toma como ruido del motor y se ignora;
+        exigir varios seguidos fue necesario porque la primera versión, que
+        frenaba con un solo error, detenía el motor apenas arrancaba.
+  \item \textbf{Silencio prolongado.} Si la aplicación repite el mismo comando
+        mientras se mantiene presionado un botón (se detecta al ver tres
+        tramas idénticas seguidas con el carro en movimiento), el firmware
+        frena cuando pasan \SI{500}{\milli\second} sin datos. Si la aplicación
+        solo envía datos al cambiar el control, este mecanismo no se activa,
+        para no detener el carro mientras el usuario mantiene un botón.
+\end{enumerate}
+
+\subsection{Diagnóstico con los LEDs de la tarjeta}
+
+Con \texttt{DIAGNOSTICO = 1}, los tres LEDs de la tarjeta muestran el estado
+interno sin necesidad de depurador (tabla~\ref{tab:leds}). Fueron decisivos
+para localizar el error de velocidad del HC-05, los reinicios por
+alimentación y el problema de habilitación del driver.
+
+\begin{table}[H]
+  \centering
+  \caption{Indicaciones de los LEDs de diagnóstico.}
+  \label{tab:leds}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l l L@{}}
+    \toprule
+    \textbf{LED} & \textbf{Pin} & \textbf{Indicación} \\
+    \midrule
+    Los tres & -- & Tres parpadeos al arrancar: el PIC se inició o se reinició. \\
+    LED1 & RB5 & Cambia de estado con cada trama de Dabble válida. \\
+    LED2 & RB4 & Cambia de estado con cada byte suelto (letra o byte no reconocido). \\
+    LED3 & RB3 & Encendido mientras hay orden de mover alguna rueda; destello corto al cambiar de baudios. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Verificación en el computador}
+
+Antes de grabar cada versión, el firmware se compiló en el computador con
+registros del PIC simulados y se le inyectaron tramas reales de Dabble. Las 22
+pruebas verifican la cruceta en sus direcciones y diagonales, el joystick en
+varios ángulos y radios, los botones de velocidad (incluida la detección de
+flanco), el freno, el rechazo de tramas de otros módulos, las letras, la
+respuesta de identificación, el cambio y la estabilidad de la velocidad en
+baudios, y los tres escenarios del freno por pérdida de señal. Estas pruebas
+validan la lógica, no el hardware; la validación física se resume en la
+sección~\ref{sec:pruebas}.
+
+El código completo está en el anexo~\ref{anx:codigo}.

@@ -41,20 +41,87 @@ batería y el driver no requiere disipador volumétrico.
         es proporcional al ciclo de trabajo $D$.
   \item \textbf{Reversa:} $x$IN2 = 1 fijo y PWM en $x$IN1 con ciclo invertido
         ($1000 - \text{velocidad}$). El driver alterna entre 01 (reversa) y 11
-        (freno, decaimiento lento). El tiempo en reversa es la fracción en bajo
-        del PWM; por eso se invierte el ciclo: velocidad 700 $\rightarrow$
-        duty 300 $\rightarrow$ 70\,\% del periodo en reversa.
+        (freno, decaimiento lento). El motor recibe voltaje solo durante la
+        fracción en bajo del PWM; por eso se invierte el ciclo: velocidad 700
+        $\rightarrow$ duty 300 $\rightarrow$ 70\,\% del periodo en reversa.
   \item \textbf{Freno dinámico:} $x$IN1 = $x$IN2 = 1. Ambos terminales del
         motor quedan a GND, la fuerza contraelectromotriz circula por los
         MOSFET inferiores y el motor se detiene mucho más rápido que en parada
         libre.
 \end{itemize}
 
-\subsection{Habilitación nSLEEP}
+El sentido de giro lo decide qué terminal del motor queda a mayor potencial:
+con la línea de dirección en 0 el terminal del lado PWM es el más positivo y la
+corriente circula $x$OUT1 $\rightarrow$ $x$OUT2; con la línea en 1 el terminal
+de dirección es el más positivo y la corriente se invierte. En la simulación,
+el signo de las RPM de los motores refleja directamente ese sentido.
 
-Con nSLEEP en 0 el driver entra en bajo consumo y sus salidas quedan en alta
-impedancia. El firmware lo mantiene en 0 mientras configura PWM y pines, y
-luego aplica el flanco $0 \rightarrow 1$ con una espera de unos milisegundos
-(tiempo de arranque del driver, del orden de \SI{1}{\milli\second}). Así,
-ningún estado transitorio de los pines durante el reinicio del PIC mueve los
-motores.
+\subsection{Cableado del módulo en la tarjeta}
+
+El esquemático de la tarjeta etiqueta las entradas del módulo como MIPIN
+(IN1), MIPWM (IN2), MDPWM (IN3) y MDPIN (IN4). En el motor izquierdo el PWM
+entra por IN2 y la dirección por IN1, al revés que en el derecho. La velocidad
+y el freno funcionan igual; solo se invierte el sentido eléctrico de ese motor,
+lo que compensa el montaje en espejo de los motorreductores en el chasis. Si en
+un chasis particular el carro gira cuando debería avanzar, basta con
+intercambiar los dos cables del motor izquierdo en su bornera.
+
+\subsection{Habilitación nSLEEP (EEP): hallazgo en la tarjeta}
+\label{sec:eep}
+
+Con nSLEEP en 0 el driver entra en bajo consumo, sus salidas quedan en alta
+impedancia e ignora las entradas IN. En protoboard, el firmware lo mantiene en
+0 durante la configuración y luego aplica el flanco $0 \rightarrow 1$ por RD2,
+con una espera mayor que el tiempo de arranque del driver ($t_{WAKE} =
+\SI{1}{\milli\second}$).
+
+En la tarjeta, el pin 12 del módulo (EEP) \textbf{no está conectado a nada}: el
+esquemático lo deja sin ruta. Como el DRV8833 tiene una resistencia interna de
+\SI{500}{\kilo\ohm} a GND en nSLEEP, el pin flotante queda en bajo y el driver
+permanece dormido. Las mediciones lo confirmaron:
+
+\begin{table}[H]
+  \centering
+  \caption{Diagnóstico de la habilitación nSLEEP en la tarjeta.}
+  \label{tab:eep}
+  \small
+  \begin{tabularx}{\textwidth}{@{}L c L@{}}
+    \toprule
+    \textbf{Condición} & \textbf{EEP medido} & \textbf{Efecto observado} \\
+    \midrule
+    EEP sin conexión, código del docente & \SI{0.14}{\volt} & Motores sin movimiento. \\
+    EEP sin conexión, código propio & \SI{0.14}{\volt} & Movimiento ocasional: el ruido acoplado desde las pistas del PWM despertaba el driver por instantes. \\
+    EEP con \SI{10}{\kilo\ohm} a \SI{5}{\volt} & \SI{1.41}{\volt} & Comportamiento errático: el valor está en la zona no definida de nSLEEP. \\
+    EEP con contacto intermitente & \SI{1.4}{\volt} / \SI{5}{\volt} & El motor responde solo a ratos. \\
+    EEP con cable directo a \SI{5}{\volt} & \SI{5}{\volt} & Driver siempre habilitado. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Según la hoja de datos, nSLEEP se lee como bajo por debajo de \SI{0.5}{\volt}
+y como alto por encima de \SI{2.5}{\volt}; entre ambos valores el
+comportamiento no está garantizado. Los \SI{1.41}{\volt} con la resistencia de
+\SI{10}{\kilo\ohm} indican que el módulo tiene su propia resistencia de
+\emph{pull-down} en EEP, que forma un divisor de voltaje con la externa:
+\begin{equation}
+  V_{EEP} = \SI{5}{\volt}\cdot\frac{R_{PD}}{\SI{10}{\kilo\ohm}+R_{PD}} = \SI{1.41}{\volt}
+  \quad\Rightarrow\quad
+  R_{PD} = \frac{1.41 \cdot \SI{10}{\kilo\ohm}}{5 - 1.41} \approx \SI{3.9}{\kilo\ohm}
+\end{equation}
+
+\noindent\textbf{Solución adoptada.} Como EEP no va a ningún pin del PIC, se
+conecta con un cable corto y directo a la línea de \SI{5}{\volt} de la lógica
+(el VCC del zócalo del HC-05). El voltaje queda en \SI{5}{\volt}, dentro del
+rango recomendado para las entradas digitales del driver (hasta
+\SI{5.75}{\volt}; máximo absoluto \SI{7}{\volt}), y la corriente es de apenas
+$5/3.9 \approx \SI{1.3}{\milli\ampere}$. Nunca debe tomarse del pin VCC del
+módulo, que en estos módulos es el voltaje de la batería. Además, EEP es
+vecino de OUT1 en el módulo: antes de energizar hay que verificar con el
+multímetro que no exista continuidad entre ambos, porque un puente llevaría el
+voltaje del motor a la línea de \SI{5}{\volt}.
+
+La lección de diseño es general: \emph{una entrada de habilitación nunca debe
+quedar flotando}. En una revisión de la tarjeta conviene rutear EEP a RD2: el PIC
+lo maneja directamente, se conserva el pulso de activación por firmware que pide
+la guía y, gracias al \emph{pull-down} del módulo, el driver queda dormido
+mientras el microcontrolador arranca, que es el estado seguro.

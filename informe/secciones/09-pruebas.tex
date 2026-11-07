@@ -4,11 +4,37 @@
 \section{Pruebas y resultados}
 \label{sec:pruebas}
 
-Las tablas recogen el valor esperado de cada prueba según la
-sección~\ref{sec:calculos} y dejan las columnas de medición para completar en
-simulación y en hardware real.
+Las pruebas se hicieron por etapas sobre la tarjeta, de lo más simple a lo más
+complejo, para aislar cada falla. La tabla~\ref{tab:resultados} resume las ya
+realizadas; las mediciones eléctricas y la demostración con alimentación
+definitiva quedan para completar.
 % Para llenar: reemplazar cada \pendiente{...} por el valor medido y
 % "Pendiente" por "Cumple" o "No cumple".
+
+\subsection{Pruebas funcionales realizadas en la tarjeta}
+
+\begin{table}[H]
+  \centering
+  \caption{Resultados de las pruebas por etapas.}
+  \label{tab:resultados}
+  \small
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.6cm} L l@{}}
+    \toprule
+    \textbf{Prueba} & \textbf{Observación} & \textbf{Resultado} \\
+    \midrule
+    Grabación (tarjeta 1) & El PIC se identifica pero la escritura falla en 0x0000, tras la conexión invertida del ICSP. & No cumple \\
+    Grabación (tarjeta 2) & \emph{Programming Successful} con el mismo PICkit y el mismo \texttt{.hex}. & Cumple \\
+    Prueba de LEDs (\texttt{prueba\_leds.c}) & Secuencia LED1 $\rightarrow$ LED2 $\rightarrow$ LED3 correcta: PIC, cristal y grabación verificados. & Cumple \\
+    Código del docente con motores & Sin movimiento: EEP en \SI{0.14}{\volt}, driver dormido. & No cumple \\
+    Enlace Bluetooth (primera versión) & Solo cambiaba LED2: bytes alterados por velocidad equivocada del HC-05. & No cumple \\
+    Enlace Bluetooth (con detección de baudios) & LED1 cambia con cada pulsación: tramas de Dabble decodificadas. & Cumple \\
+    Comandos sin motores (alimentación del PICkit) & LED3 se enciende con cada dirección y se apaga al soltar; $\triangle$, $\bigcirc$ y $\times$ solo cambian LED1; sin reinicios. & Cumple \\
+    Motor con pila de \SI{9}{\volt} & Al arrancar, el HC-05 se desconecta o el PIC se reinicia (tres parpadeos); antes del freno de seguridad, el motor quedaba girando. & No cumple \\
+    Motor con EEP en \SI{1.4}{\volt} & Respuesta intermitente; EEP alterna entre \SI{1.4}{\volt} y \SI{5}{\volt}. & No cumple \\
+    Motor con EEP a \SI{5}{\volt} y batería 18650 & \pendiente{Por realizar} & Pendiente \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
 
 \subsection{Mediciones de PWM (cristal de 20 MHz)}
 
@@ -29,8 +55,9 @@ simulación y en hardware real.
     Duración de rampa 0 $\rightarrow$ 1000 & \SI{2.1}{\second} (21 pasos)  & \pendiente{} & \pendiente{} & Pendiente \\
     Voltaje en VM con motores girando   & $\leq$ \SI{10}{\volt}            & ---          & \pendiente{} & Pendiente \\
     VDD del PIC al arrancar motores     & \SI{5}{\volt} $\pm$ \SI{0.25}{\volt} & ---       & \pendiente{} & Pendiente \\
-    Pulso en nSLEEP al encender         & Flanco $0 \rightarrow 1$ tras configurar PWM & \pendiente{} & \pendiente{} & Pendiente \\
+    EEP (nSLEEP) con motores girando    & \SI{5}{\volt} fijo               & ---          & \pendiente{} & Pendiente \\
     UART: comando \texttt{F} con eco    & Avance y eco \texttt{F}          & \pendiente{} & \pendiente{} & Pendiente \\
+    Dabble: cruceta $\uparrow$          & Ambas ruedas en avance, LED3 encendido & ---    & \pendiente{} & Pendiente \\
     \bottomrule
   \end{tabularx}
 \end{table}

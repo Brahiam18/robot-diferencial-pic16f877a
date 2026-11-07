@@ -1,0 +1,114 @@
+% ============================================================================
+%  Programación y puesta en marcha
+% ============================================================================
+\section{Programación y puesta en marcha}
+\label{sec:programacion}
+
+\subsection{Herramientas}
+
+\begin{table}[H]
+  \centering
+  \caption{Herramientas de desarrollo y programación.}
+  \label{tab:herramientas}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l l L@{}}
+    \toprule
+    \textbf{Herramienta} & \textbf{Versión} & \textbf{Observación} \\
+    \midrule
+    MPLAB X IDE / IPE & v6.20 & Última versión compatible con el PICkit~3: Microchip retiró su soporte desde la v6.25. \\
+    Compilador MPLAB XC8 & v3.10 (también v2.46) & Licencia gratuita; ambas versiones compilan el proyecto. \\
+    PICkit~3 Programmer & v3.10 & Aplicación independiente, usada con el programador clon. \\
+    Proteus & -- & Simulación con L293D en lugar del DRV8833. \\
+    Dabble (Android) & -- & En la Play Store figura como \emph{Arduino ESP Bluetooth -- Dabble}, de STEMpedia. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Proyecto con varias configuraciones}
+
+Un proyecto de MPLAB X une todos sus archivos \texttt{.c} en un solo
+\texttt{.hex}, y dos archivos con su propia función \texttt{main()} producen
+errores de definición múltiple. Para conservar el código del docente intacto
+junto al propio, el proyecto tiene tres configuraciones (\emph{Project
+Properties $\rightarrow$ Manage Configurations}); en cada una se excluyen los
+archivos que no corresponden (\emph{File Inclusion/Exclusion}):
+
+\begin{table}[H]
+  \centering
+  \caption{Configuraciones del proyecto en MPLAB X.}
+  \label{tab:configs}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l l L@{}}
+    \toprule
+    \textbf{Configuración} & \textbf{Archivo} & \textbf{Contenido} \\
+    \midrule
+    \texttt{try1}     & \texttt{codigo\_docente.c} & Código de la guía (secuencia con rampas y freno). \\
+    \texttt{completo} & \texttt{taller2\_robot\_diferencial.c} & Firmware propio (secuencia o control por celular). \\
+    \texttt{leds}     & \texttt{prueba\_leds.c} & Prueba de montaje: secuencia en los tres LEDs. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Cada configuración genera su propio archivo en
+\texttt{dist/<configuración>/production/}. El nombre del \texttt{.hex} es el
+mismo en todas; lo que cambia es la carpeta, y el \emph{checksum} que muestra
+el panel del proyecto permite confirmar cuál se generó (por ejemplo,
+\texttt{0x5EB1} para el código del docente).
+
+\subsection{Grabación con el PICkit 3}
+
+\begin{enumerate}
+  \item Conectar el PICkit al conector ICSP con la \textbf{flecha del pin 1}
+        hacia la marca de pin 1 de la tarjeta, y los seis pines conectados.
+  \item En \emph{PICkit~3 Programmer}: \emph{Tools $\rightarrow$ Check
+        Communication}. Si el clon no aparece, cargar el sistema operativo
+        \texttt{PK3OSV020005.hex} con \emph{Tools $\rightarrow$ Download
+        PICkit Operating System}.
+  \item Activar \emph{Programmer $\rightarrow$ Manual Device Select}, elegir
+        \emph{Midrange $\rightarrow$ Standard} y el PIC16F877A. Con la
+        detección automática la aplicación se bloqueaba con el clon.
+  \item Alimentación: con la tarjeta energizada por su batería, \emph{VDD On}
+        desactivado; para pruebas sin motores, \emph{VDD On} a
+        \SI{5.0}{\volt}.
+  \item \emph{File $\rightarrow$ Import Hex}, \emph{Write} y verificar el
+        mensaje \emph{Programming Successful}. Desmarcar \emph{/MCLR} para que
+        el programa arranque.
+\end{enumerate}
+
+\noindent\textbf{Incidente.} En una de las tarjetas el conector se conectó
+invertido. Con la inversión, el voltaje de programación (unos
+\SI{13}{\volt}) que el PICkit aplica en su pin~1 llegó al pin 6 del conector,
+que corresponde a RB3/PGM, una entrada de E/S cuyo máximo es VDD +
+\SI{0.3}{\volt}. Desde entonces esa tarjeta identifica el PIC pero falla al
+escribir en la dirección 0x0000, mientras que el mismo programador y el mismo
+\texttt{.hex} graban sin problema en otra tarjeta. El síntoma es coherente con
+un daño en RB3: en un PIC borrado la programación en bajo voltaje viene
+activada, y con PGM alterado el chip no acepta la programación normal. La
+tarjeta quedó pendiente de cambio del microcontrolador.
+
+\subsection{Conexión del celular}
+
+\begin{enumerate}
+  \item Grabar la configuración \texttt{completo} con \texttt{MODO\_BLUETOOTH
+        = 1}. Al encender, los tres LEDs parpadean tres veces y el LED del
+        HC-05 parpadea rápido.
+  \item Vincular el HC-05 en \emph{Ajustes $\rightarrow$ Bluetooth} del
+        celular (clave 1234 o 0000; algunos módulos vinculan sin clave). Debe
+        quedar \emph{vinculado}, no \emph{conectado}: si el sistema se queda
+        con la conexión, el módulo no aparece en la aplicación.
+  \item En Dabble, con la ubicación del celular activa y los permisos de
+        dispositivos cercanos concedidos, tocar el ícono de conexión, elegir
+        HC-05 y abrir el módulo \emph{Gamepad}.
+  \item Presionar varios botones hasta que el LED1 empiece a cambiar con cada
+        pulsación: la UART encontró la velocidad del módulo.
+  \item Antes de apagar el carro, desconectar desde la aplicación para que el
+        celular no conserve la conexión anterior.
+\end{enumerate}
+
+\noindent\textbf{Limitación con iPhone.} El HC-05 usa Bluetooth Clásico con el
+perfil de puerto serie (SPP), que iOS solo permite a accesorios certificados
+por Apple. Por eso el módulo no aparece ni en los ajustes del iPhone ni en
+aplicaciones como \emph{Bluetooth Serial}. Para usar un iPhone basta con
+reemplazar el HC-05 por un módulo BLE (HM-10, o JDY-33 de doble modo): trabajan
+a 9600~baudios, entregan los mismos bytes al PIC y Dabble para iOS los admite,
+por lo que el firmware no cambia.

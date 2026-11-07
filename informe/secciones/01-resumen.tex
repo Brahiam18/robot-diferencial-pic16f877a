@@ -4,27 +4,38 @@
 \section*{Resumen}
 \addcontentsline{toc}{section}{Resumen}
 
-Se diseñó e implementó el control de una plataforma móvil diferencial de dos
-motorreductores DC con un PIC16F877A y el doble puente H DRV8833. La velocidad
-de cada rueda se controla por PWM de hardware (CCP1 y CCP2 sincronizados con
-Timer2) a \textbf{\SI{1.25}{\kilo\hertz} con 1000 niveles de ciclo de trabajo
-($\approx$10~bits)}, y el sentido de giro y el frenado dinámico se gobiernan
-con dos líneas digitales de dirección.
+Se diseñó, implementó y depuró el control de una plataforma móvil diferencial
+de dos motorreductores DC con un PIC16F877A (encapsulado TQFP-44, sobre la
+tarjeta del curso) y el doble puente H DRV8833. La velocidad de cada rueda se
+controla por PWM de hardware (CCP1 y CCP2 sincronizados con Timer2) a
+\textbf{\SI{1.25}{\kilo\hertz} con 1000 niveles de ciclo de trabajo
+($\approx$10~bits)}; el sentido de giro y el frenado dinámico se gobiernan con
+dos líneas digitales de dirección.
 
-El firmware, escrito en C con MPLAB XC8, está organizado en tres capas
-(hardware, control por motor y navegación) y ofrece dos modos seleccionables en
-compilación: la secuencia automática de validación del taller (avance, reversa,
-giro y frenado con rampas) y el control remoto desde un celular por Bluetooth
-(HC-05/HC-06, UART a 9600~baudios, con interrupción de recepción y control de
-velocidad en 11 niveles).
+El firmware, escrito en C con MPLAB XC8, se organiza en capas (hardware,
+control por motor, navegación y comunicación) y tiene dos modos seleccionables
+en compilación: la secuencia automática de validación del taller (avance,
+reversa, giro y frenado con rampas) y el control remoto desde un celular
+Android con la aplicación \emph{Dabble} (gamepad con cruceta, joystick
+proporcional y botones de velocidad) a través de un módulo Bluetooth HC-05. El
+receptor decodifica el protocolo binario de Dabble con una máquina de estados en
+la interrupción de la UART, detecta automáticamente la velocidad en baudios del
+módulo y frena el carro si se pierde la señal. El watchdog y el reinicio por
+bajo voltaje evitan que el microcontrolador quede bloqueado.
 
-Durante el diseño se identificó que la frecuencia de \SI{1.2}{\kilo\hertz}
-pedida no es alcanzable con cristal de \SI{20}{\mega\hertz} y prescaler 1:16
-(exige $PR2 = 259 > 255$); se justifica el uso de \SI{1.25}{\kilo\hertz}.
-También se resolvieron la ausencia del pulso de habilitación nSLEEP y del giro
-en el código base, y la diferencia entre el cristal de la lista de materiales
-(\SI{4}{\mega\hertz}) y el del código (\SI{20}{\mega\hertz}).
+Durante el diseño y la puesta en marcha se identificaron y resolvieron siete
+problemas: la frecuencia de \SI{1.2}{\kilo\hertz} pedida no es alcanzable con
+\SI{20}{\mega\hertz} y prescaler 1:16 (exige $PR2 = 259 > 255$); el pin de
+habilitación nSLEEP (EEP) del driver no está conectado en la tarjeta, por lo que
+el driver permanecía dormido; la resistencia de \SI{10}{\kilo\ohm} usada para
+habilitarlo formaba un divisor con la del módulo y dejaba nSLEEP en
+\SI{1.41}{\volt}, por debajo del umbral de \SI{2.5}{\volt}; el HC-05 trabajaba
+a una velocidad distinta de 9600~baudios; la batería de \SI{9}{\volt} no
+soporta la corriente de arranque de los motores; el HC-05 (Bluetooth Clásico)
+no es compatible con iPhone; y una conexión invertida del programador dañó el
+PIC de una de las tarjetas.
 
 \medskip
 \noindent\textbf{Palabras clave:} PIC16F877A, DRV8833, PWM, Timer2, robótica
-móvil diferencial, puente H, UART, Bluetooth, MPLAB XC8, sistemas embebidos.
+móvil diferencial, puente H, UART, Bluetooth, HC-05, Dabble, máquina de
+estados, watchdog, MPLAB XC8, sistemas embebidos.

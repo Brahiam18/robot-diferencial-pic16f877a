@@ -16,74 +16,81 @@
   ]
 
   % ---------- Microcontrolador ----------
-  \node[principal, minimum width=5.2cm, minimum height=9.6cm, anchor=north]
+  \node[principal, minimum width=5.2cm, minimum height=10.6cm, anchor=north]
        (pic) at (0,0) {};
   \node[font=\bfseries\large, anchor=north] at ($(pic.north)+(0,-0.25)$) {PIC16F877A};
+  \node[anchor=north, font=\footnotesize, text=gris] at ($(pic.north)+(0,-0.75)$) {TQFP-44, \SI{20}{\mega\hertz}};
   \node[anchor=north west, align=left, font=\footnotesize]
-       at ($(pic.north west)+(0.2,-1.0)$) {%
+       at ($(pic.north west)+(0.2,-1.3)$) {%
        RC2 / CCP1: PWM izquierdo\\[2pt]
        RD0: dirección izquierda\\[2pt]
        RC1 / CCP2: PWM derecho\\[2pt]
-       RD1: dirección derecha\\[2pt]
-       RD2: nSLEEP};
+       RD1: dirección derecha};
 
   % ---------- Columna izquierda ----------
   \node[bloque, anchor=north] (bat) at (-5.6,-0.1)
-       {\textbf{Batería}\\ \footnotesize\textcolor{gris}{máx.\ \SI{10}{\volt} DC}};
+       {\textbf{Batería}\\ \footnotesize\textcolor{gris}{\SI{7.4}{\volt} (2$\times$18650)}};
   \node[bloque, below=0.75cm of bat] (reg)
        {\textbf{LM7805}\\ \footnotesize\textcolor{gris}{\SI{5}{\volt} para la lógica}};
   \node[bloque, below=0.75cm of reg] (xtal)
-       {\textbf{Cristal}\\ \footnotesize\textcolor{gris}{\SI{20}{\mega\hertz} (o \SI{4}{\mega\hertz})}};
+       {\textbf{Cristal}\\ \footnotesize\textcolor{gris}{\SI{20}{\mega\hertz}, 2$\times$\SI{22}{\pico\farad}}};
   \node[bloque, below=0.75cm of xtal] (pk)
        {\textbf{PICkit 3}\\ \footnotesize\textcolor{gris}{programación ICSP}};
   \node[bloque, below=0.75cm of pk] (bt)
-       {\textbf{HC-05 / HC-06}\\ \footnotesize\textcolor{gris}{Bluetooth, 9600 baud}};
+       {\textbf{HC-05}\\ \footnotesize\textcolor{gris}{Bluetooth Clásico}};
+  \node[bloque, below=0.75cm of bt] (cel)
+       {\textbf{Celular Android}\\ \footnotesize\textcolor{gris}{app Dabble (Gamepad)}};
 
   % ---------- Columna derecha ----------
-  \node[driver, minimum width=4.2cm, minimum height=4.2cm, anchor=north]
-       (drv) at (6.4,-0.1) {};
+  \node[driver, minimum width=4.6cm, minimum height=3.6cm, anchor=north]
+       (drv) at (6.6,-0.1) {};
   \node[font=\bfseries\large, anchor=north] at ($(drv.north)+(0,-0.2)$) {DRV8833};
   \node[anchor=north west, align=left, font=\footnotesize]
        at ($(drv.north west)+(0.15,-0.9)$) {%
-       AIN1 / AIN2: rueda izq.\\[2pt]
-       BIN1 / BIN2: rueda der.\\[2pt]
-       nSLEEP: habilitación\\[2pt]
+       IN1--IN4: PWM y dirección\\[2pt]
+       EEP (nSLEEP): a \SI{5}{\volt}\\[2pt]
        \textcolor{gris}{VM: 2.7 a \SI{10.8}{\volt}}\\[2pt]
        \textcolor{gris}{\SI{1.5}{\ampere} por canal}};
 
-  \node[bloque, minimum width=4.2cm, below=0.9cm of drv] (mizq)
-       {\textbf{Motor izquierdo}\\ \footnotesize\textcolor{gris}{AOUT1 / AOUT2}};
-  \node[bloque, minimum width=4.2cm, below=0.75cm of mizq] (mder)
-       {\textbf{Motor derecho}\\ \footnotesize\textcolor{gris}{BOUT1 / BOUT2}};
+  \node[bloque, minimum width=4.6cm, below=0.9cm of drv] (mizq)
+       {\textbf{Motor izquierdo}\\ \footnotesize\textcolor{gris}{OUT1 / OUT2}};
+  \node[bloque, minimum width=4.6cm, below=0.75cm of mizq] (mder)
+       {\textbf{Motor derecho}\\ \footnotesize\textcolor{gris}{OUT3 / OUT4}};
+  \node[bloque, minimum width=4.6cm, below=1.2cm of mder] (leds)
+       {\textbf{LED1 / LED2 / LED3}\\ \footnotesize\textcolor{gris}{RB5 / RB4 / RB3: diagnóstico}};
 
   % ---------- Conexiones ----------
-  % Potencia de motores
   \draw[flecha] (bat.north) -- ++(0,0.45) -| node[etiqueta, pos=0.25, above]
-       {Vmotor $\leq$ \SI{10}{\volt}} (drv.north);
+       {VM $\leq$ \SI{10}{\volt}} (drv.north);
   \draw[flecha] (bat.south) -- (reg.north);
 
-  % Lógica y periféricos hacia el PIC
   \draw[flecha] (reg.east)  -- node[etiqueta, above] {\SI{5}{\volt}} (reg.east -| pic.west);
   \draw[flecha] (xtal.east) -- (xtal.east -| pic.west);
   \draw[flecha] (pk.east)   -- (pk.east -| pic.west);
   \draw[<->, draw=gris, line width=0.6pt]
        (bt.east) -- node[etiqueta, above] {UART} (bt.east -| pic.west);
+  \draw[<->, draw=gris, line width=0.6pt, dashed]
+       (cel.north) -- node[etiqueta, right] {Bluetooth} (bt.south);
 
   % Pines del PIC alineados con cada flecha que llega
   \node[anchor=west, font=\footnotesize, text=gris] at (xtal.east -| pic.west)
        [xshift=0.2cm, yshift=0.15cm] {OSC1 / OSC2: cristal};
   \node[anchor=west, font=\footnotesize, text=gris] at (xtal.east -| pic.west)
-       [xshift=0.2cm, yshift=-0.25cm] {Timer2: base de tiempo PWM};
+       [xshift=0.2cm, yshift=-0.25cm] {Timer2: base del PWM};
   \node[anchor=west, font=\footnotesize, text=gris] at (pk.east -| pic.west)
        [xshift=0.2cm] {MCLR, RB6, RB7: ICSP};
   \node[anchor=west, font=\footnotesize, text=gris] at (bt.east -| pic.west)
-       [xshift=0.2cm] {RC6 TX / RC7 RX: UART};
+       [xshift=0.2cm] {RC7 RX / RC6 TX: UART};
+  \node[anchor=east, font=\footnotesize, text=gris] at (leds.west -| pic.east)
+       [xshift=-0.2cm] {RB5, RB4, RB3};
 
-  % Señales de control hacia el driver (línea horizontal)
+  % Señales de control hacia el driver
   \coordinate (sal) at ($(drv.west)+(0,0.6)$);
-  \draw[flecha] (sal -| pic.east) -- node[etiqueta, above] {5 señales} (sal);
+  \draw[flecha] (sal -| pic.east) -- node[etiqueta, above] {4 señales} (sal);
+  \draw[flecha] (leds.west -| pic.east) -- (leds.west);
 
   % Salidas a los motores
   \draw[flecha] (drv.south) -- (mizq.north);
-  \draw[flecha] ($(drv.east)+(0,-1.0)$) -- ++(0.4,0) |- (mder.east);
+  \draw[flecha] ($(drv.east)+(0,-0.8)$) -- ++(0.4,0) |- (mder.east);
+
 \end{tikzpicture}

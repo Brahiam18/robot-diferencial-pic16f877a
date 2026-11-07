@@ -1,14 +1,32 @@
 % ============================================================================
-%  Anexo A. Código fuente
-%  El código se lee directamente de ../firmware/taller2_robot_diferencial.c,
-%  así que cualquier cambio en el firmware aparece solo en el informe.
+%  Anexos: código fuente
+%  El código se lee directamente de ../firmware/, así que cualquier cambio en
+%  el firmware aparece solo en el informe.
 % ============================================================================
-\section{Código fuente completo}
+\section{Firmware principal}
 \label{anx:codigo}
 
-El firmware está en el archivo \texttt{firmware/taller2\_robot\_diferencial.c}
-del repositorio. Se compila con MPLAB XC8 para el PIC16F877A.
+Archivo \texttt{firmware/taller2\_robot\_diferencial.c} (configuración
+\texttt{completo}). Se compila con MPLAB XC8 para el PIC16F877A.
 
 \lstinputlisting[caption={Firmware del robot móvil diferencial
 (\texttt{taller2\_robot\_diferencial.c}).}, label={lst:firmware}]
 {../firmware/taller2_robot_diferencial.c}
+
+\section{Código de la guía del taller}
+\label{anx:docente}
+
+Archivo \texttt{firmware/codigo\_docente.c} (configuración \texttt{try1}): el
+código entregado por el docente, sin los encabezados de página que se
+copiaron desde el PDF.
+
+\lstinputlisting[caption={Código de la guía (\texttt{codigo\_docente.c}).},
+label={lst:docente}]{../firmware/codigo_docente.c}
+
+\section{Prueba de montaje con LEDs}
+\label{anx:leds}
+
+Archivo \texttt{firmware/prueba\_leds.c} (configuración \texttt{leds}).
+
+\lstinputlisting[caption={Prueba de montaje (\texttt{prueba\_leds.c}).},
+label={lst:leds}]{../firmware/prueba_leds.c}

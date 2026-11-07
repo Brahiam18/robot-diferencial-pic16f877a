@@ -17,10 +17,18 @@ El PIC16F877A ejecuta una instrucción cada 4 ciclos de reloj:
   T_{cy}  &= 4\,T_{osc} = \SI{200}{\nano\second}
   \qquad\Rightarrow\qquad F_{cy} = \SI{5}{\mega\hertz}
 \end{align}
+Con un cristal de \SI{20}{\mega\hertz} el oscilador debe configurarse en modo
+\textbf{HS} (cristales de 4 a \SI{20}{\mega\hertz}), que da al amplificador
+interno la ganancia que necesita el cristal para arrancar.
 
 \subsection{Registro PR2 para 1.2 kHz}
 
-El periodo del PWM lo fija Timer2, que se reinicia al igualar a PR2:
+El periodo del PWM lo fija Timer2, que se reinicia al igualar a PR2. Cada
+cuenta del Timer2 dura
+\begin{equation}
+  T_{tick} = 4\,T_{osc}\cdot\text{Pre} = \SI{200}{\nano\second}\cdot 16 = \SI{3.2}{\micro\second}
+\end{equation}
+y el periodo es
 \begin{equation}
   T_{PWM} = (PR2 + 1)\cdot 4\,T_{osc}\cdot \text{Pre}
   \qquad\Rightarrow\qquad
@@ -44,7 +52,7 @@ $\mathbf{PR2 = 249}$:
 \begin{equation}
   F_{PWM} = \frac{\num{20000000}}{4\cdot 16\cdot 250} = \SI{1250}{\hertz}
   \qquad
-  T_{PWM} = \SI{800}{\micro\second}
+  T_{PWM} = 250 \cdot \SI{3.2}{\micro\second} = \SI{800}{\micro\second}
 \end{equation}
 
 El error frente a \SI{1.2}{\kilo\hertz} es de 4.2\,\%. Con $PR2 = 255$ se
@@ -70,6 +78,10 @@ CCP$x$CON$\langle5{:}4\rangle$ (CCP$x$X, CCP$x$Y).
   \qquad
   \Delta D = \SI{0.1}{\percent}
 \end{equation}
+La resolución máxima que admite la frecuencia elegida es
+$\log_2(F_{osc}/F_{PWM}) = \log_2(16000) \approx 13.97$~bits; el límite real lo
+pone el registro de 10~bits, y con $PR2 = 249$ se aprovecha prácticamente toda
+esa resolución.
 
 \begin{table}[H]
   \centering
@@ -93,33 +105,96 @@ CCP$x$CON$\langle5{:}4\rangle$ (CCP$x$X, CCP$x$Y).
 Si se monta el cristal de \SI{4}{\mega\hertz} de la lista de materiales con la
 configuración anterior, el PWM cae a
 $\SI{4}{\mega\hertz} / (64 \cdot 250) = \SI{250}{\hertz}$: frecuencia audible y
-par irregular a baja velocidad. Para conservar $PR2 = 249$ y la escala 0--1000
-se usa prescaler 1:4:
+par irregular a baja velocidad, y todos los retardos duran cinco veces más.
+Para conservar $PR2 = 249$ y la escala 0--1000 se usa modo XT y prescaler 1:4:
 \begin{equation}
   F_{PWM} = \frac{\num{4000000}}{4\cdot 4\cdot 250} = \SI{1000}{\hertz}
   \qquad
   T_{cy} = \SI{1}{\micro\second}
 \end{equation}
 
-\subsection{Velocidad de la UART (Bluetooth)}
+\subsection{Velocidad de la UART}
 
 Con BRGH = 1 (alta velocidad):
 \begin{equation}
   \text{Baud} = \frac{F_{osc}}{16\,(SPBRG + 1)}
 \end{equation}
+El firmware prueba en orden las velocidades de la tabla~\ref{tab:uart} hasta
+encontrar la del módulo Bluetooth (sección~\ref{sec:autobaud}). Todas tienen un
+error menor a $\pm$2\,\%, aceptable para comunicación asíncrona de 8~bits.
 
 \begin{table}[H]
   \centering
-  \caption{Configuración de SPBRG para 9600 baudios.}
+  \caption{Valores de SPBRG con cristal de \SI{20}{\mega\hertz} y BRGH = 1.}
   \label{tab:uart}
-  \begin{tabular}{@{}l r r r@{}}
+  \begin{tabular}{@{}r r r r@{}}
     \toprule
-    \textbf{Cristal} & \textbf{SPBRG} & \textbf{Baud real} & \textbf{Error vs 9600} \\
+    \textbf{Baud nominal} & \textbf{SPBRG} & \textbf{Baud real} & \textbf{Error} \\
     \midrule
-    \SI{20}{\mega\hertz} & 129 & 9615 & +0.16\,\% \\
-    \SI{4}{\mega\hertz}  & 25  & 9615 & +0.16\,\% \\
+    9600   & 129 & 9615   & +0.16\,\% \\
+    38400  & 32  & 37879  & $-$1.36\,\% \\
+    19200  & 64  & 19231  & +0.16\,\% \\
+    57600  & 21  & 56818  & $-$1.36\,\% \\
+    115200 & 10  & 113636 & $-$1.36\,\% \\
     \bottomrule
   \end{tabular}
 \end{table}
+Con cristal de \SI{4}{\mega\hertz} solo 9600 ($SPBRG = 25$) y 19200
+($SPBRG = 12$) tienen error aceptable.
 
-Un error menor a $\pm$2\,\% es aceptable para comunicación asíncrona de 8~bits.
+\subsection{Tiempos de protección}
+
+\begin{table}[H]
+  \centering
+  \caption{Temporizaciones de los mecanismos de protección (valores típicos de la hoja de datos).}
+  \label{tab:proteccion}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l l L@{}}
+    \toprule
+    \textbf{Mecanismo} & \textbf{Valor} & \textbf{Cálculo y uso} \\
+    \midrule
+    Power-up timer (PWRTE) & \SI{72}{\milli\second} & Mantiene el PIC en reset al encender hasta que VDD se estabiliza. \\
+    Brown-out reset (BOREN) & $V_{BOR} \approx \SI{4.0}{\volt}$ & Reinicia el PIC de forma limpia si VDD cae por debajo del umbral. \\
+    Watchdog (WDTE) & $\SI{18}{\milli\second}\times 128 \approx \SI{2.3}{\second}$ & Periodo nominal del WDT por el postscaler 1:128 asignado por defecto. El lazo principal ejecuta \texttt{CLRWDT()} cada \SI{1}{\milli\second}. \\
+    Arranque del DRV8833 & $t_{WAKE} = \SI{1}{\milli\second}$ & Espera tras el flanco de nSLEEP (protoboard). \\
+    Freno por pérdida de señal & \SI{500}{\milli\second} & Tiempo sin datos tras el cual el carro frena (sección~\ref{sec:failsafe}). \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Control proporcional con joystick}
+\label{sec:mezcla}
+
+Dabble codifica la posición del joystick en un byte \texttt{AAAAARRR}: el
+ángulo es $\theta = 15^\circ \cdot \texttt{AAAAA}$ (0 a $345^\circ$) y el radio
+$r = \texttt{RRR}$ (0 a 7). Las componentes normalizadas a $\pm 1000$ son:
+\begin{equation}
+  v_y = \frac{r}{7}\cdot 1000\,\sin\theta
+  \qquad
+  v_x = \frac{r}{7}\cdot 1000\,\cos\theta
+\end{equation}
+y la mezcla diferencial asigna la velocidad de cada rueda, limitada a $\pm 1000$:
+\begin{equation}
+  v_{izq} = v_y + v_x \qquad v_{der} = v_y - v_x
+\end{equation}
+Así, el joystick hacia adelante ($\theta = 90^\circ$) da $v_{izq} = v_{der} =
+1000$; hacia la derecha ($\theta = 0^\circ$) da $v_{izq} = 1000$, $v_{der} =
+-1000$ (giro sobre su eje), y las posiciones intermedias producen curvas. Como
+$\theta$ solo toma múltiplos de $15^\circ$, el seno y el coseno se leen de una
+tabla de 24 valores en lugar de calcularse en punto flotante.
+
+\subsection{Compensación de la zona muerta del motor}
+
+Un motorreductor no vence la fricción estática con ciclos de trabajo bajos:
+con menos de un 25--30\,\% de PWM zumba sin moverse. Para que responda en cuanto
+se toca el control, la velocidad pedida $v$ (0 a 1000), escalada por la
+velocidad máxima ajustable $v_{max}$, se lleva al intervalo útil
+$[V_{MIN}, 1000]$:
+\begin{equation}
+  s = \frac{|v|\cdot v_{max}}{1000}
+  \qquad
+  DC = V_{MIN} + s\cdot\frac{1000 - V_{MIN}}{1000}
+  \qquad (s > 0)
+\end{equation}
+con $V_{MIN} = 300$. Por ejemplo, con $v = 1000$ y $v_{max} = 800$ resulta
+$DC = 300 + 800\cdot 0.7 = 860$.

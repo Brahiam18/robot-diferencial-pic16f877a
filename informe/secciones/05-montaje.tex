@@ -5,7 +5,8 @@
 \label{sec:montaje}
 
 Cada regla de montaje responde a un modo de falla concreto de los sistemas que
-mezclan lógica y motores (tabla~\ref{tab:montaje}).
+mezclan lógica y motores (tabla~\ref{tab:montaje}). Las reglas aplican tanto al
+montaje en protoboard como a la tarjeta del curso.
 
 \begin{table}[H]
   \centering
@@ -18,14 +19,16 @@ mezclan lógica y motores (tabla~\ref{tab:montaje}).
     \midrule
     Masa común & GND de \SI{5}{\volt} y de Vmotor unidos en un solo punto cerca del DRV8833. &
       Sin referencia común el driver no interpreta los niveles lógicos del PIC; unirlas en varios puntos crea lazos de tierra por donde circula corriente de motor. \\
-    Desacoplo del PIC & Cerámico de \SI{0.1}{\micro\farad} entre VDD y VSS (pines 11/12 y 32/31). &
+    Desacoplo del PIC & Cerámico de \SI{0.1}{\micro\farad} entre VDD y VSS. &
       Picos de consumo del núcleo que causan reinicios por caída de VDD. \\
     Bus de potencia & Electrolítico de \SI{100}{\micro\farad} en paralelo con cerámico de \SI{0.1}{\micro\farad} entre VM y GND del driver. &
       El electrolítico entrega los picos de arranque e inversión; el cerámico filtra el ruido de alta frecuencia del PWM. \\
-    Supresión en motores & Cerámico de \SI{0.1}{\micro\farad} entre terminales de cada motor. &
-      Ruido de las escobillas y transitorios $dI/dt$ que se acoplan a la lógica. \\
+    Supresión en motores & Cerámico de \SI{0.1}{\micro\farad} soldado entre los terminales de cada motor. &
+      Ruido de las escobillas y transitorios $dI/dt$ que se acoplan a la lógica y al HC-05. \\
     Regulación & LM7805 desde la batería para VDD = \SI{5}{\volt}. &
-      La batería cae al arrancar los motores; el regulador mantiene estable la lógica. \\
+      La batería cae al arrancar los motores; el regulador mantiene estable la lógica mientras su entrada supere unos \SI{7}{\volt}. \\
+    Habilitación & EEP (nSLEEP) a \SI{5}{\volt} con cable directo (sección~\ref{sec:eep}). &
+      Driver dormido o con habilitación intermitente. \\
     ICSP & MCLR, RB6 y RB7 libres hacia el conector del PICkit~3. &
       Permite reprogramar sin retirar el PIC del montaje. \\
     Reset & \SI{10}{\kilo\ohm} de MCLR a VDD y pulsador NA a GND. &
@@ -40,9 +43,18 @@ mezclan lógica y motores (tabla~\ref{tab:montaje}).
 
 El cristal va lo más cerca posible de OSC1/OSC2, con dos capacitores a GND. La
 hoja de datos del PIC16F877A recomienda 15 a \SI{33}{\pico\farad} para
-cristales de 4 y \SI{20}{\mega\hertz}; el esquemático usa \SI{22}{\pico\farad}.
-Los \SI{44}{\pico\farad} de la lista de materiales quedan fuera de ese rango y
-pueden dificultar el arranque del oscilador.
+cristales de 4 y \SI{20}{\mega\hertz}. La capacitancia que ve el cristal es la
+serie de los dos capacitores más la parásita del circuito, del orden de
+\SI{5}{\pico\farad}:
+\begin{equation}
+  C_L = \frac{C_1 C_2}{C_1 + C_2} + C_{par}
+\end{equation}
+Con \SI{22}{\pico\farad} se obtiene $C_L \approx 11 + 5 = \SI{16}{\pico\farad}$,
+cercano a los 18--\SI{20}{\pico\farad} que especifican los cristales
+comerciales de \SI{20}{\mega\hertz}. Los \SI{44}{\pico\farad} de la lista de
+materiales darían $C_L \approx \SI{27}{\pico\farad}$: el cristal oscilaría por
+debajo de su frecuencia nominal y podría no arrancar. Por eso se usa
+\SI{22}{\pico\farad}, como en el esquemático.
 
 \subsection{Nivel lógico del HC-05}
 
@@ -51,9 +63,38 @@ Su entrada RXD trabaja a \SI{3.3}{\volt}, por lo que la salida TX del PIC
 \begin{equation}
   V_{RXD} = \SI{5}{\volt}\cdot\frac{2}{1+2} \approx \SI{3.3}{\volt}
 \end{equation}
-En sentido contrario, el pin RX del PIC (entrada Schmitt trigger) requiere en
-hoja de datos $0.8\,V_{DD} = \SI{4}{\volt}$ para leer un 1. Los
-\SI{3.3}{\volt} del módulo suelen funcionar en la práctica; si aparecen errores
-de recepción se agrega un convertidor de nivel.
+Esta línea solo transporta el eco y la respuesta de identificación a Dabble; si
+no se conecta, el control funciona igual. En sentido contrario, el pin RX del
+PIC (entrada Schmitt trigger) requiere en hoja de datos $0.8\,V_{DD} =
+\SI{4}{\volt}$ para leer un 1; los \SI{3.3}{\volt} del módulo funcionaron en la
+práctica, y si aparecen errores de recepción se agrega un convertidor de nivel.
 
-\figurapendiente{Fotografía del montaje en protoboard}{fig:montaje}
+\subsection{Alimentación}
+\label{sec:alimentacion}
+
+Un motorreductor TT consume del orden de 100 a \SI{200}{\milli\ampere} girando
+sin carga y entre 0.5 y \SI{1}{\ampere} al arrancar. Las pruebas mostraron que
+las fuentes débiles producen fallas que parecen de software:
+
+\begin{table}[H]
+  \centering
+  \caption{Fuentes de alimentación probadas.}
+  \label{tab:fuentes}
+  \small
+  \begin{tabularx}{\textwidth}{@{}l L l@{}}
+    \toprule
+    \textbf{Fuente} & \textbf{Comportamiento observado} & \textbf{Uso} \\
+    \midrule
+    PICkit~3 (VDD On) & Entrega unos \SI{30}{\milli\ampere}: alcanza para el PIC, los LEDs y el HC-05; no mueve los motores. & Pruebas sin motores \\
+    Pila de \SI{9}{\volt} & Al arrancar el motor el voltaje cae: el HC-05 se reinicia y pierde la conexión, o el PIC se reinicia por bajo voltaje. & No recomendada \\
+    2 baterías 18650 en serie (\SI{7.4}{\volt}) & Entregan varios amperios sin caída apreciable. & Recomendada \\
+    Fuente de laboratorio & \SI{7.5}{\volt} con límite de \SI{1}{\ampere}. & Pruebas en banco \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+Nunca deben usarse dos fuentes a la vez en la línea de \SI{5}{\volt}: si la
+batería está conectada, la opción \emph{VDD On} del PICkit debe estar
+desactivada.
+
+\figurapendiente{Fotografía de la tarjeta montada con motores y HC-05}{fig:montaje}

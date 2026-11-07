@@ -8,7 +8,8 @@ Proteus no incluye un modelo del DRV8833 en su librería estándar, por lo que s
 simula con un \textbf{L293D}, que tiene la misma tabla de verdad por canal
 (IN1/IN2) y permite validar toda la lógica del firmware. Las diferencias de
 potencia (caída de voltaje, corriente máxima) solo se evalúan en el montaje
-real.
+real. El mismo esquemático sirve para el código del docente y para el propio:
+basta con cambiar el \texttt{.hex} que carga el PIC.
 
 \begin{table}[H]
   \centering
@@ -19,28 +20,37 @@ real.
     \toprule
     \textbf{Elemento} & \textbf{Conexión} & \textbf{Configuración} \\
     \midrule
-    PIC16F877A       & Program File = \texttt{.hex} de MPLAB X & Processor Clock Frequency = \SI{20}{\mega\hertz} (o \SI{4}{\mega\hertz}) \\
-    L293D            & IN1 = RC2, IN2 = RD0, IN3 = RC1, IN4 = RD1 & EN1 y EN2 a +\SI{5}{\volt}; VSS a +\SI{5}{\volt}; VS a la fuente de motores \\
-    2 $\times$ MOTOR (DC) & OUT1/OUT2 y OUT3/OUT4 & Motor izquierdo y derecho \\
-    OSCILLOSCOPE     & Canal A en RC2, canal B en RC1 & Medición de periodo y ciclo de trabajo \\
+    PIC16F877A       & Program File = \texttt{.hex} de MPLAB X & Processor Clock Frequency = \SI{20}{\mega\hertz} \\
+    L293D            & IN1 = RC2, IN2 = RD0, IN3 = RC1, IN4 = RD1 & VSS a +\SI{5}{\volt}; VS a +\SI{6}{\volt}; EN1 y EN2 a +\SI{5}{\volt} o a RD2 (emula nSLEEP) \\
+    2 $\times$ MOTOR-DC & OUT1/OUT2 y OUT3/OUT4 & Tensión nominal \SI{6}{\volt} \\
+    OSCILLOSCOPE     & A = RC2, B = RC1, C = RD0, D = RD1 & 0.2~ms/div, 2~V/div \\
+    LOGICPROBE       & RD0, RD1 y RD2 & Estado de dirección y habilitación \\
     VIRTUAL TERMINAL & TXD $\rightarrow$ RC7, RXD $\rightarrow$ RC6 & 9600~baudios, 8N1 (reemplaza al HC-05) \\
-    RES + BUTTON     & MCLR con \SI{10}{\kilo\ohm} a +\SI{5}{\volt} & Reset \\
+    RES              & MCLR con \SI{10}{\kilo\ohm} a +\SI{5}{\volt} & Reset \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\subsection{Procedimiento de prueba}
+\subsection{Procedimiento y resultados esperados}
 
 \begin{enumerate}
-  \item Compilar en MPLAB X con \texttt{MODO\_BLUETOOTH 0} y cargar el
-        \texttt{.hex}.
-  \item Verificar con el osciloscopio un periodo de \SI{800}{\micro\second} en
-        RC2 y RC1, y el crecimiento del ciclo de trabajo durante las rampas.
-  \item Observar el sentido de giro de los motores en cada etapa de la
-        secuencia.
-  \item Compilar con \texttt{MODO\_BLUETOOTH 1}, escribir \texttt{F},
-        \texttt{B}, \texttt{L}, \texttt{R}, \texttt{S} y \texttt{0}--\texttt{9}
-        en la terminal virtual y comprobar la respuesta y el eco.
+  \item Cargar el \texttt{.hex} de la configuración \texttt{try1} (código del
+        docente). Los motores muestran RPM positivas en el avance, negativas
+        en la reversa y cero en el freno: el signo de las RPM es el sentido de
+        giro. En la reversa el ancho del pulso en RC2 y RC1 disminuye mientras
+        el motor acelera, por la inversión del ciclo de trabajo.
+  \item Verificar con el osciloscopio un periodo de \SI{800}{\micro\second}
+        (4 divisiones) en RC2 y RC1, y que RD0 y RD1 sean niveles fijos que solo
+        cambian entre etapas.
+  \item Cargar la configuración \texttt{completo} con \texttt{MODO\_BLUETOOTH
+        = 0}: además de lo anterior, los dos giros muestran RPM de signos
+        opuestos en cada motor.
+  \item Con \texttt{MODO\_BLUETOOTH = 1}, escribir en la terminal virtual
+        \texttt{F}, \texttt{B}, \texttt{L}, \texttt{R}, \texttt{S} y
+        \texttt{0}--\texttt{9}, una letra a la vez, y comprobar la respuesta y
+        el eco. Las tramas binarias de Dabble no se pueden escribir desde la
+        terminal; ese protocolo se validó con las pruebas en el computador y en
+        el hardware.
 \end{enumerate}
 
 \figurapendiente{Esquemático del circuito en Proteus}{fig:proteus-esquematico}

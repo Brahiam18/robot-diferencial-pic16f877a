@@ -1,0 +1,74 @@
+% ============================================================================
+%  Depuración en hardware
+% ============================================================================
+\section{Depuración en hardware}
+\label{sec:depuracion}
+
+La puesta en marcha en la tarjeta presentó fallas que, a primera vista,
+parecían errores de software. Cada una se aisló cambiando una sola variable a
+la vez: otra tarjeta, otro código, otra fuente o una medición en un punto
+concreto. La tabla~\ref{tab:depuracion} resume el proceso en el orden en que
+ocurrió.
+
+\begin{table}[H]
+  \centering
+  \caption{Fallas encontradas, diagnóstico y solución.}
+  \label{tab:depuracion}
+  \footnotesize
+  \begin{tabularx}{\textwidth}{@{}c >{\raggedright\arraybackslash}p{2.9cm} L L@{}}
+    \toprule
+    \textbf{\#} & \textbf{Síntoma} & \textbf{Diagnóstico} & \textbf{Causa y solución} \\
+    \midrule
+    1 & El código de la guía no compila. &
+      Al copiarlo del PDF quedaron los encabezados de página dentro del código. &
+      Se retiraron los encabezados y se movió la declaración de \texttt{velocidad} al inicio de \texttt{main()} (compatibilidad C90). \\
+    2 & La aplicación del PICkit se bloquea al elegir la familia del PIC. &
+      Ocurre durante la detección automática del chip con un programador clon. &
+      \emph{Manual Device Select} y selección manual del PIC16F877A. \\
+    3 & \emph{Programming failed at address 0x000000} en una tarjeta. &
+      La misma grabación funciona en otra tarjeta: el problema es de esa tarjeta. Antes se había conectado el ICSP invertido. &
+      VPP (\SI{13}{\volt}) aplicado en RB3/PGM. PIC dañado; se trabaja en la otra tarjeta. \\
+    4 & Los motores no se mueven con el código del docente. &
+      EEP medido en \SI{0.14}{\volt}; el esquemático muestra EEP sin conexión. &
+      Driver dormido. Se habilita EEP por hardware (sección~\ref{sec:eep}). \\
+    5 & Con el código propio los motores se mueven a ratos, con demoras, o solo uno. &
+      EEP flotante: el ruido del PWM lo despertaba por instantes. A baja velocidad, además, la zona muerta del motor. &
+      Habilitación fija de EEP y compensación de zona muerta ($V_{MIN} = 300$). \\
+    6 & En Dabble, $\triangle$ hace retroceder el carro; ninguna dirección responde bien. &
+      Con los LEDs de diagnóstico: solo cambia LED2, nunca LED1. Los bytes llegan alterados. &
+      HC-05 a una velocidad distinta de 9600 baudios. Detección automática de baudios (sección~\ref{sec:autobaud}). \\
+    7 & Tras un comando, el carro queda girando y no obedece. &
+      Dabble muestra \emph{HC-05 disconnected} justo al arrancar el motor. &
+      La pila de \SI{9}{\volt} cae y el HC-05 se reinicia; el PIC conservaba la última orden. Freno por pérdida de señal (sección~\ref{sec:failsafe}). \\
+    8 & Tras agregar el freno de seguridad, el motor no arranca. &
+      El freno se activaba con un único error de trama causado por el ruido del motor. &
+      Se exigen tres errores consecutivos para frenar. \\
+    9 & Los tres LEDs parpadean al presionar una dirección. &
+      Es la señal de arranque del PIC: hubo un reinicio por bajo voltaje (BOR). Sin motores no ocurre. &
+      Fuente insuficiente. Se requieren baterías 18650 o una fuente de laboratorio. \\
+    10 & Con EEP conectado a \SI{5}{\volt} mediante \SI{10}{\kilo\ohm}, el motor responde a ratos. &
+      EEP mide \SI{1.41}{\volt}, en la zona no definida de nSLEEP, y a veces \SI{5}{\volt}. &
+      Divisor con el \emph{pull-down} del módulo y contacto intermitente. Cable directo a \SI{5}{\volt}, sin continuidad con OUT1. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Lecciones}
+
+\begin{itemize}
+  \item \textbf{Los LEDs indican órdenes, no resultados.} Que LED3 se encienda
+        demuestra que el PIC ordena mover el motor, no que el motor gire. Para
+        separar ambas cosas hubo que medir en la cadena PIC $\rightarrow$
+        driver $\rightarrow$ motor.
+  \item \textbf{Una entrada de habilitación nunca debe quedar flotando.} Un
+        nivel indefinido produce fallas intermitentes, que son las más
+        difíciles de diagnosticar.
+  \item \textbf{La alimentación se prueba primero.} Varias fallas que parecían
+        de comunicación o de código eran caídas de voltaje al arrancar los
+        motores.
+  \item \textbf{Un mecanismo de protección también puede fallar.} El freno por
+        pérdida de señal, demasiado sensible, detenía el carro por ruido; hubo
+        que ajustarlo a las condiciones reales.
+  \item \textbf{Verificar la orientación del programador antes de cualquier
+        clic.} La aplicación aplica voltaje apenas detecta el chip.
+\end{itemize}

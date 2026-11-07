@@ -1,5 +1,5 @@
 % ============================================================================
-%  10. Conclusiones y trabajo futuro
+%  Conclusiones y trabajo futuro
 % ============================================================================
 \section{Conclusiones y trabajo futuro}
 \label{sec:conclusiones}
@@ -18,32 +18,46 @@
   \item Aplicar PWM directo en avance e invertido en reversa con el DRV8833
         permite controlar velocidad y sentido con solo dos líneas por motor, y
         el freno dinámico detiene la plataforma más rápido que la parada libre.
-  \item Las rampas de aceleración, el freno previo a cada inversión y el
-        desacoplo del bus de potencia atacan la causa principal de reinicios
-        del microcontrolador: las caídas de voltaje por corriente de arranque.
-  \item La arquitectura en capas y la selección de modo en compilación
-        permitieron agregar el control Bluetooth sin modificar las funciones de
-        control de motores.
+  \item La causa de que los motores no respondieran en la tarjeta fue de
+        hardware: el pin de habilitación nSLEEP no está ruteado y una
+        resistencia de \SI{10}{\kilo\ohm} lo dejaba en \SI{1.41}{\volt}, por
+        debajo del umbral de \SI{2.5}{\volt}. Medir en el punto correcto y
+        contrastar con la hoja de datos fue más efectivo que modificar el
+        código.
+  \item Decodificar el protocolo binario de Dabble con una máquina de estados
+        en la interrupción permitió un control tipo gamepad con joystick
+        proporcional, sin cambiar el hardware y manteniendo la compatibilidad
+        con comandos de texto.
+  \item La detección automática de baudios, el freno por pérdida de señal, el
+        watchdog y el brown-out convierten fallas de alimentación y de
+        configuración en comportamientos seguros y visibles, en lugar de un
+        carro que sigue moviéndose sin control.
+  \item Los LEDs de diagnóstico y las pruebas automatizadas en el computador
+        separaron los errores de lógica de los de hardware y redujeron el
+        número de ciclos de grabación en la tarjeta.
 \end{itemize}
 
 \subsection{Competencias aplicadas}
 
 Configuración de periféricos de microcontroladores (CCP, Timer2, USART,
-interrupciones), electrónica de potencia para motores DC, diseño de firmware
-embebido modular en C, comunicación serie inalámbrica, buenas prácticas de
-integridad de señal y alimentación, simulación de circuitos en Proteus y
-validación en hardware.
+interrupciones, watchdog y brown-out), electrónica de potencia para motores DC,
+diseño de firmware embebido modular en C, implementación de un protocolo de
+comunicación binario con máquina de estados, comunicación inalámbrica
+Bluetooth, integridad de señal y alimentación, depuración sistemática de
+hardware con instrumentos de medición, pruebas automatizadas de firmware,
+simulación en Proteus y validación en hardware.
 
 \subsection{Trabajo futuro}
 
 \begin{itemize}
-  \item Lazo cerrado de velocidad con encoders en las ruedas y control PI, para
-        que el robot avance recto aunque los dos motores no sean idénticos.
-  \item Seguridad por pérdida de enlace: detener el robot si no llegan
-        comandos Bluetooth durante un tiempo definido.
-  \item Giros suaves con velocidades distintas por rueda (giro con radio),
-        además del giro sobre el eje.
-  \item Medición del voltaje de batería con el ADC para alertar carga baja.
-  \item Migración del montaje de protoboard a una PCB a partir del
-        esquemático.
+  \item Rutear EEP a RD2 en una nueva revisión de la tarjeta, para habilitar
+        el driver desde el firmware.
+  \item Lazo cerrado de velocidad con encoders en las ruedas y control PI,
+        para que el robot avance recto aunque los dos motores no sean
+        idénticos.
+  \item Guardar en la EEPROM la velocidad en baudios detectada, para que el
+        carro responda desde el primer comando tras encenderse.
+  \item Medición del voltaje de batería con el ADC, para avisar carga baja
+        antes de que se produzcan reinicios.
+  \item Soporte para iPhone con un módulo BLE (HM-10 o JDY-33).
 \end{itemize}

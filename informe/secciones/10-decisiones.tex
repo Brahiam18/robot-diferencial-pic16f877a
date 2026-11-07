@@ -4,9 +4,10 @@
 \section{Decisiones de diseño y discrepancias resueltas}
 \label{sec:decisiones}
 
-Al contrastar la guía del taller con las hojas de datos se encontraron cinco
-puntos que, sin resolverse, habrían afectado el funcionamiento o la evaluación
-(tabla~\ref{tab:decisiones}).
+Al contrastar la guía del taller con las hojas de datos, y al llevar el
+diseño a la tarjeta, se tomaron las decisiones de la tabla~\ref{tab:decisiones}.
+Las fallas encontradas durante la puesta en marcha se detallan en la
+sección~\ref{sec:depuracion}.
 
 \begin{table}[H]
   \centering
@@ -32,6 +33,18 @@ puntos que, sin resolverse, habrían afectado el funcionamiento o la evaluación
     5 & Capacitores de cristal de \SI{44}{\pico\farad} en la lista de materiales. &
         Fuera del rango recomendado de 15 a \SI{33}{\pico\farad}; arranque del oscilador poco confiable. &
         Usar \SI{22}{\pico\farad}, como en el esquemático. \\
+    6 & En la tarjeta, EEP (nSLEEP) no está conectado al PIC. &
+        El pulso por RD2 no llega al driver, que queda dormido. &
+        EEP a \SI{5}{\volt} por hardware; el pulso por RD2 se conserva para el montaje en protoboard. \\
+    7 & El HC-05 (Bluetooth Clásico) no funciona con iPhone. &
+        No hay aplicación de iOS que pueda conectarse a él. &
+        Control con Android y Dabble; para iPhone, reemplazo por HM-10 o JDY-33 sin cambiar el firmware. \\
+    8 & Se quería un control tipo gamepad, no solo letras. &
+        Las aplicaciones de letras no permiten control proporcional. &
+        Decodificación del protocolo de Dabble: cruceta, joystick con mezcla diferencial y botones; las letras se conservan. \\
+    9 & Las caídas de alimentación dejaban el carro sin control. &
+        Riesgo de que el carro siga en movimiento sin órdenes. &
+        Watchdog y brown-out activos, y freno por pérdida de señal. \\
     \bottomrule
   \end{tabularx}
 \end{table}

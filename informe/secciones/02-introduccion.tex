@@ -14,7 +14,7 @@ sincronizada.
 \subsection*{Objetivo general}
 Implementar el control de velocidad, sentido de giro y frenado de una
 plataforma móvil diferencial con un PIC16F877A y un driver DRV8833, validado en
-simulación y en hardware real.
+simulación y en hardware real, y manejable de forma remota desde un celular.
 
 \subsection*{Objetivos específicos}
 \begin{enumerate}
@@ -22,10 +22,18 @@ simulación y en hardware real.
         PWM con Timer2 como base de tiempo única.
   \item Integrar el DRV8833 para gobernar velocidad, sentido de giro y frenado
         dinámico de dos motores DC.
-  \item Aplicar normas de montaje en protoboard: masa común, habilitación por
-        nSLEEP y supresión de ruido inductivo ($dI/dt$).
+  \item Aplicar normas de montaje: masa común, habilitación por nSLEEP,
+        desacoplo y supresión de ruido inductivo ($dI/dt$).
   \item Desarrollar firmware modular en MPLAB XC8 para la navegación de la
         plataforma.
-  \item \emph{(Extensión del grupo)} Agregar control remoto desde un celular
-        mediante un módulo Bluetooth serie.
+  \item \emph{(Extensión del grupo)} Controlar el carro desde un celular con
+        una interfaz tipo gamepad, de forma robusta ante pérdidas de señal y
+        caídas de alimentación.
 \end{enumerate}
+
+\subsection*{Alcance}
+El trabajo se realizó en dos plataformas: un montaje en protoboard con el PIC
+en encapsulado DIP-40, para el que fue escrita la guía del taller, y la
+tarjeta de circuito impreso del curso \emph{Electrónica Digital II -- 2026B},
+con el PIC en TQFP-44, módulo DRV8833, zócalo para HC-05, tres LEDs y conector
+ICSP. Las pruebas en hardware se hicieron sobre la tarjeta.
