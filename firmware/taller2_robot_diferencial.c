@@ -348,8 +348,7 @@ void main(void)
  *      '0'..'9' velocidad 0 % .. 90 % | 'q' velocidad 100 %
  */
 
-#define VEL_INICIAL   500   // Velocidad inicial (0-1000): arranca a la mitad. Se sube
-                            // con el triangulo de Dabble (+10 %) o con el circulo (100 %)
+#define VEL_INICIAL   800   // Velocidad maxima inicial (0-1000)
 #define VEL_MINIMA    300   // PWM minimo para vencer la friccion del motor (0 = sin ajuste)
 #define FAILSAFE_MS   500   // Frena si se pierde la senal por este tiempo (0 = desactivado).
                             // Solo actua si la app repite los datos mientras se mantiene
