@@ -45,6 +45,16 @@
 #define MODO_BLUETOOTH  1   // 0 = secuencia automatica del taller
                             // 1 = control desde el celular (Dabble Gamepad o letras)
 
+#define GIRO_SOBRE_EJE  0   // 1 = giros con ruedas en sentidos opuestos (requiere que
+                            //     RD0 y RD1 NO esten unidas en la tarjeta)
+                            // 0 = giros con pivote: una rueda avanza y la otra se detiene;
+                            //     RD0 y RD1 siempre iguales (seguro aunque esten unidas)
+
+#define TARJETA_CURSO   1   // 1 = PCB del curso: EEP (nSLEEP) va a 5 V por hardware.
+                            //     RD2 y RD3 quedan como ENTRADAS: en la tarjeta estan
+                            //     unidas a la linea de IN1 y pelearian con RD0.
+                            // 0 = protoboard: nSLEEP controlado por RD2 (pulso de activacion)
+
 /* ------------------------------------------------------------------------ */
 
 #if CRISTAL_20MHZ
@@ -70,9 +80,39 @@
 #include <xc.h>
 
 // Pines de direccion y habilitacion del DRV8833
-#define MOTOR_IZQ_DIR   PORTDbits.RD0   // AIN2
-#define MOTOR_DER_DIR   PORTDbits.RD1   // BIN2
-#define DRV_NSLEEP      PORTDbits.RD2   // nSLEEP
+// Bits del puerto D: RD0 = direccion izquierda, RD1 = direccion derecha, RD2 = nSLEEP
+#define BIT_DIR_IZQ     0x01
+#define BIT_DIR_DER     0x02
+#define BIT_NSLEEP      0x04
+
+/*
+ * Copia en memoria ("sombra") del puerto D.
+ * En los PIC16 no hay registro LAT: cambiar un solo bit (BSF/BCF) lee TODOS los
+ * pines del puerto y los vuelve a escribir. Si un pin esta cargado y se lee
+ * distinto de lo que se ordeno, su valor se pierde. Escribiendo siempre el
+ * puerto completo desde esta copia, cada pin conserva el valor ordenado.
+ */
+unsigned char sombra_d = 0;
+
+void Puerto_D(unsigned char mascara, unsigned char valor)
+{
+    if (valor) sombra_d |= mascara;
+    else       sombra_d &= (unsigned char)~mascara;
+    PORTD = sombra_d;
+}
+
+// Cambia las dos lineas de direccion en una sola escritura
+void Direcciones(unsigned char izq, unsigned char der)
+{
+    sombra_d &= (unsigned char)~(BIT_DIR_IZQ | BIT_DIR_DER);
+    if (izq) sombra_d |= BIT_DIR_IZQ;
+    if (der) sombra_d |= BIT_DIR_DER;
+    PORTD = sombra_d;
+}
+
+#define MOTOR_IZQ_DIR(v)  Puerto_D(BIT_DIR_IZQ, (v))
+#define MOTOR_DER_DIR(v)  Puerto_D(BIT_DIR_DER, (v))
+#define DRV_NSLEEP(v)     Puerto_D(BIT_NSLEEP, (v))
 
 #define VEL_GIRO        600             // Velocidad de giro en la secuencia (0-1000)
 
@@ -92,13 +132,17 @@ void PWM_Init(void)
     TRISCbits.TRISC1 = 0;
     TRISCbits.TRISC2 = 0;
 
-    // Pines de direccion y nSLEEP
+    // Pines de direccion (y nSLEEP en protoboard)
+    sombra_d = 0;                   // Direcciones en 0 (y driver dormido en protoboard)
+    PORTD = sombra_d;               // antes de habilitar las salidas
     TRISDbits.TRISD0 = 0;
     TRISDbits.TRISD1 = 0;
-    TRISDbits.TRISD2 = 0;
-    MOTOR_IZQ_DIR = 0;
-    MOTOR_DER_DIR = 0;
-    DRV_NSLEEP    = 0;              // Driver dormido hasta terminar la configuracion
+#if TARJETA_CURSO
+    TRISDbits.TRISD2 = 1;           // Entrada: unida a IN1 en la tarjeta, no debe pelear
+    TRISDbits.TRISD3 = 1;           // Entrada: idem (fuga hacia la linea de IN1)
+#else
+    TRISDbits.TRISD2 = 0;           // nSLEEP controlado por el PIC
+#endif
 
     // Periodo: 4*(PR2+1) = 1000 cuentas -> ciclo de trabajo en escala 0-1000
     PR2 = 249;
@@ -115,10 +159,14 @@ void PWM_Init(void)
 // Pulso de activacion del DRV8833: flanco 0 -> 1 en nSLEEP y espera tWAKE (~1 ms)
 void DRV8833_Wake(void)
 {
-    DRV_NSLEEP = 0;
+#if TARJETA_CURSO
+    __delay_ms(2);                  // EEP ya esta en 5 V: solo se espera tWAKE
+#else
+    DRV_NSLEEP(0);
     __delay_ms(1);
-    DRV_NSLEEP = 1;
+    DRV_NSLEEP(1);
     __delay_ms(2);
+#endif
 }
 
 // Ciclo de trabajo CCP1 (motor izquierdo), 0-1000
@@ -145,10 +193,10 @@ void Set_Duty_Motor_Der(unsigned int duty)
 void Motor_Izquierdo(unsigned int speed, unsigned char dir)
 {
     if (dir == 1) {
-        MOTOR_IZQ_DIR = 0;                  // AIN2 = 0
+        MOTOR_IZQ_DIR(0);                   // AIN2 = 0
         Set_Duty_Motor_Izq(speed);          // AIN1 = PWM   (10 avance / 00 libre)
     } else {
-        MOTOR_IZQ_DIR = 1;                  // AIN2 = 1
+        MOTOR_IZQ_DIR(1);                   // AIN2 = 1
         Set_Duty_Motor_Izq(1000 - speed);   // AIN1 = PWM invertido (01 reversa / 11 freno)
     }
 }
@@ -156,10 +204,10 @@ void Motor_Izquierdo(unsigned int speed, unsigned char dir)
 void Motor_Derecho(unsigned int speed, unsigned char dir)
 {
     if (dir == 1) {
-        MOTOR_DER_DIR = 0;                  // BIN2 = 0
+        MOTOR_DER_DIR(0);                   // BIN2 = 0
         Set_Duty_Motor_Der(speed);          // BIN1 = PWM
     } else {
-        MOTOR_DER_DIR = 1;                  // BIN2 = 1
+        MOTOR_DER_DIR(1);                   // BIN2 = 1
         Set_Duty_Motor_Der(1000 - speed);
     }
 }
@@ -167,8 +215,7 @@ void Motor_Derecho(unsigned int speed, unsigned char dir)
 // Freno dinamico: xIN1 = 1, xIN2 = 1 en ambos canales
 void Freno_General(void)
 {
-    MOTOR_IZQ_DIR = 1;
-    MOTOR_DER_DIR = 1;
+    Direcciones(1, 1);
     Set_Duty_Motor_Izq(1000);
     Set_Duty_Motor_Der(1000);
 }
@@ -176,8 +223,7 @@ void Freno_General(void)
 // Parada libre: xIN1 = 0, xIN2 = 0 (salidas en alta impedancia)
 void Parada_Libre(void)
 {
-    MOTOR_IZQ_DIR = 0;
-    MOTOR_DER_DIR = 0;
+    Direcciones(0, 0);
     Set_Duty_Motor_Izq(0);
     Set_Duty_Motor_Der(0);
 }
@@ -194,8 +240,13 @@ void Mover(mov_t m, unsigned int v)
     switch (m) {
         case ADELANTE:  Motor_Izquierdo(v, 1); Motor_Derecho(v, 1); break;
         case ATRAS:     Motor_Izquierdo(v, 0); Motor_Derecho(v, 0); break;
+#if GIRO_SOBRE_EJE
         case IZQUIERDA: Motor_Izquierdo(v, 0); Motor_Derecho(v, 1); break;
         case DERECHA:   Motor_Izquierdo(v, 1); Motor_Derecho(v, 0); break;
+#else   // Giro con pivote: una rueda suelta, la otra avanza (RD0 = RD1 = 0)
+        case IZQUIERDA: Motor_Izquierdo(0, 1); Motor_Derecho(v, 1); break;
+        case DERECHA:   Motor_Izquierdo(v, 1); Motor_Derecho(0, 1); break;
+#endif
         default:        Freno_General();                            break;
     }
 }
@@ -554,7 +605,21 @@ void Rueda_Derecha(int v)
 
 void Aplicar_Ruedas(void)
 {
-    signed char si = Signo(obj_izq), sd = Signo(obj_der);
+    int iz = obj_izq, de = obj_der;
+    signed char si, sd;
+
+#if !GIRO_SOBRE_EJE
+    // Giro con pivote: nunca se piden sentidos opuestos, de modo que las dos
+    // lineas de direccion (RD0 y RD1) quedan siempre con el mismo valor.
+    // La rueda que deberia ir hacia atras se detiene y la otra sigue.
+    if ((iz > 0 && de < 0) || (iz < 0 && de > 0)) {
+        if (iz < 0) iz = 0;
+        else        de = 0;
+    }
+#endif
+
+    si = Signo(iz);
+    sd = Signo(de);
 
     // Si alguna rueda invierte su sentido, frena 30 ms antes (protege driver y motor)
     if ((sig_izq != 0 && si == -sig_izq) || (sig_der != 0 && sd == -sig_der)) {
@@ -567,8 +632,13 @@ void Aplicar_Ruedas(void)
     if (si == 0 && sd == 0) {
         Freno_General();
     } else {
-        Rueda_Izquierda(obj_izq);
-        Rueda_Derecha(obj_der);
+        // Una rueda detenida toma la misma linea de direccion que la otra:
+        //   si la otra avanza (direccion = 0) -> parada libre (0-0)
+        //   si la otra retrocede (direccion = 1) -> freno (1-1)
+        if (si == 0) Motor_Izquierdo(0, (sd > 0) ? 1 : 0);
+        else         Rueda_Izquierda(iz);
+        if (sd == 0) Motor_Derecho(0, (si > 0) ? 1 : 0);
+        else         Rueda_Derecha(de);
     }
 }
 
