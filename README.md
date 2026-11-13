@@ -7,8 +7,28 @@ y se maneja desde un celular Android con un **control tipo gamepad** (app Dabble
 Proyecto del Taller Práctico II de *Microcontroladores y Sistemas Embebidos*, Programa de Ingeniería
 Electrónica, Universidad de Ibagué.
 
-> **Estado:** en desarrollo. El firmware y los informes (v0.2) están completos; faltan las
-> mediciones finales en hardware, fotografías y capturas de simulación.
+> **Estado:** funcional. El carro funcionó completo en la tarjeta del curso y obtuvo el
+> **segundo lugar** en la competencia del curso (noviembre de 2026). Los informes (v0.2) están
+> en borrador: faltan fotografías, capturas de simulación y mediciones.
+
+## Resultado
+
+[![Video del robot en funcionamiento](https://img.youtube.com/vi/f3ZtwNBpTU8/hqdefault.jpg)](https://youtube.com/shorts/f3ZtwNBpTU8)
+
+**[Ver el video en YouTube](https://youtube.com/shorts/f3ZtwNBpTU8)**: avance, retroceso, giros y
+cambio de velocidad desde el mando de Dabble por Bluetooth.
+
+- **Segundo lugar** en la competencia del curso.
+- Fallas resueltas en el montaje: pin EEP (nSLEEP) sin conexión en la tarjeta, corto entre IN1 y
+  RD2/RD3, lectura-modificación-escritura del puerto D (resuelta con un registro sombra) y
+  velocidad del HC-05 distinta a la del PIC (detección automática de baudios).
+
+**Mejoras para una próxima versión**
+
+- Movimientos más suaves: hoy los cambios de velocidad son bruscos.
+- Dirección tipo carro: girar mientras avanza (curvas) en lugar de girar sobre una rueda.
+- Reemplazar los retardos bloqueantes (`__delay_ms`) por temporizadores para un control más dinámico.
+- Mejorar el diseño mecánico (contrapesos) y la calidad de las soldaduras.
 
 ## Características
 
