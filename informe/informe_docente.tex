@@ -32,6 +32,7 @@
 \usepackage[hidelinks]{hyperref}
 
 \input{config}
+\renewcommand{\versiondoc}{1.0}
 \titlespacing*{\section}{0pt}{12pt}{5pt}
 \titlespacing*{\subsection}{0pt}{8pt}{4pt}
 \renewcommand{\arraystretch}{1.15}
@@ -57,14 +58,16 @@
   {\color{acento}\rule{\textwidth}{0.8pt}}
 \end{center}
 
-\noindent\textbf{Resultado.} Se configuró el PWM de hardware (CCP1 y CCP2 con
-Timer2) a \SI{1250}{\hertz} con resolución de 10~bits y se implementó el
-control de los dos motores con el DRV8833: avance, reversa, giro sobre su eje
-y freno dinámico, con rampas de aceleración. Como extensión, el carro se maneja
-desde un celular Android con un control tipo gamepad por Bluetooth (HC-05). En
-la tarjeta del curso se encontró que el pin de habilitación del driver (EEP)
-no está conectado, lo que impedía mover los motores con el código de la guía;
-la corrección se describe en la sección~\ref{c:montaje}.
+\noindent\textbf{Resultado.} El carro funcionó completo en la tarjeta del
+curso y obtuvo el \textbf{segundo lugar} en la competencia. Se configuró el PWM
+de hardware (CCP1 y CCP2 con Timer2) a \SI{1250}{\hertz} con resolución de
+10~bits y se implementó el control de los dos motores con el DRV8833: avance,
+reversa, giros a la izquierda y a la derecha y freno dinámico. Como extensión,
+el carro se maneja desde un celular Android con un control tipo gamepad por
+Bluetooth (HC-05). Para que funcionara en la tarjeta se corrigieron dos fallas
+de hardware (EEP sin conectar y un corto en IN1) y una de firmware (escritura
+del puerto~D), descritas en las secciones~\ref{c:montaje} y~\ref{c:demo}.
+Video de la demostración: \url{https://youtube.com/shorts/f3ZtwNBpTU8}.
 
 % ============================================================================
 \section{Montaje físico y DRV8833}
@@ -112,9 +115,11 @@ la corrección se describe en la sección~\ref{c:montaje}.
         valor está por debajo del umbral de \SI{2.5}{\volt} de la hoja de datos.
         Se conectó EEP directo a \SI{5}{\volt} (VCC del HC-05). En protoboard el
         firmware genera el pulso de activación por RD2.
+  \item \textbf{Corto en IN1:} la pista de IN1 (MIPIN) quedó unida por
+        soldadura a las patas 40 y 41 (RD2 y RD3). El firmware las deja como
+        entradas (\texttt{TARJETA\_CURSO = 1}) para que no lleven IN1 a otro
+        nivel, y luego se retiró el puente de estaño.
 \end{itemize}
-
-\figurapendiente{Fotografía de la tarjeta montada}{c:fig:montaje}
 
 % ============================================================================
 \section{Justificación matemática}
@@ -176,7 +181,7 @@ organizado por capas:
     Set\_Duty\_Motor\_Izq/\allowbreak Der(duty) & Carga el valor de 10~bits en CCPR$x$L y CCP$x$X:CCP$x$Y. \\
     Motor\_Izquierdo/\allowbreak Derecho(speed, dir) & Avance: dirección = 0 y PWM directo. Reversa: dirección = 1 y PWM invertido (1000 $-$ speed). \\
     Freno\_General() & $x$IN1 = $x$IN2 = 1 en ambos canales: freno dinámico. \\
-    Mover(), Rampa\_Subir/\allowbreak Bajar() & Avance, reversa y giros con rampas de 0 a 1000 en pasos de 50 cada \SI{100}{\milli\second}. \\
+    Mover(), Rampa\_Subir/\allowbreak Bajar() & Avance, reversa y giros. En la secuencia del taller, rampas de 0 a 1000 en pasos de 50 cada \SI{100}{\milli\second}. \\
     Procesar\_Byte(), \allowbreak Comando\_Gamepad() & Recepción por interrupción de los comandos del celular. \\
     \bottomrule
   \end{tabularx}
@@ -191,10 +196,17 @@ valor pedido. Antes de invertir el sentido de una rueda se frena
 
 \noindent\textbf{Cambios respecto al código de la guía:}
 \begin{itemize}
-  \item Se agregaron los giros a la izquierda y a la derecha sobre su eje, que
-        la rúbrica evalúa y la secuencia base no tenía.
-  \item Se agregó el pulso de activación de nSLEEP (por RD2, para el montaje
-        en protoboard).
+  \item Se agregaron los giros a la izquierda y a la derecha, que la rúbrica
+        evalúa y la secuencia base no tenía. En la tarjeta se usan giros en
+        pivote (una rueda avanza y la otra queda frenada); el giro sobre su eje,
+        con las ruedas en sentidos opuestos, queda disponible con
+        \texttt{GIRO\_SOBRE\_EJE = 1}.
+  \item Los pines de dirección (RD0 y RD1) se escriben a través de una copia
+        del puerto~D en memoria (registro sombra). El PIC16F877A no tiene
+        registro LAT: escribir un bit lee el puerto completo, y un pin cargado
+        por el circuito podía cambiar el valor de los demás.
+  \item Se agregó el pulso de activación de nSLEEP (por RD2, solo para el
+        montaje en protoboard).
   \item El texto copiado del PDF impedía compilar (los encabezados de página
         quedaron dentro del código); se limpió.
   \item Control remoto con la app Dabble: cruceta, joystick proporcional
@@ -209,6 +221,7 @@ remoto se verificó además en el computador con 22 pruebas automáticas.
 
 % ============================================================================
 \section{Demostración en hardware}
+\label{c:demo}
 
 \begin{table}[H]
   \centering
@@ -218,11 +231,11 @@ remoto se verificó además en el computador con 22 pruebas automáticas.
     \toprule
     \textbf{Prueba} & \textbf{Observación} & \textbf{Resultado} \\
     \midrule
-    PWM en RC2 y RC1 & Periodo \SI{800}{\micro\second} esperado; medido: \pendiente{} & Pendiente \\
-    Avance y reversa con rampas & \pendiente{} & Pendiente \\
-    Giro izquierda y derecha & \pendiente{} & Pendiente \\
-    Freno sin reinicios del PIC & \pendiente{} & Pendiente \\
-    Control desde el celular & Comandos recibidos y decodificados (verificado con los LEDs); falta la prueba con baterías 18650. & Parcial \\
+    Avance y reversa & Las dos ruedas giran en el sentido pedido. & Correcto \\
+    Giro izquierda y derecha & Giro en pivote: una rueda avanza y la otra queda frenada. & Correcto \\
+    Control de velocidad & Se sube y baja desde el mando (pasos de \SI{10}{\percent}). & Correcto \\
+    Control desde el celular & Cruceta, joystick y botones de la app Dabble por Bluetooth. & Correcto \\
+    Competencia del curso & Recorrido completo manejado desde el celular. & 2.º lugar \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -238,6 +251,11 @@ remoto se verificó además en el computador con 22 pruebas automáticas.
         automático por pérdida de señal.
   \item \emph{Falla al grabar una tarjeta:} PIC dañado por el ICSP conectado
         al revés $\rightarrow$ se trabajó con otra tarjeta.
+  \item \emph{Motor izquierdo siempre encendido:} IN1 en corto con RD2 y RD3
+        $\rightarrow$ esos pines como entradas y se retiró el puente de estaño.
+  \item \emph{Giros con zumbido y sin movimiento:} al escribir un pin de
+        dirección cambiaba el otro (lectura-modificación-escritura del
+        puerto~D) $\rightarrow$ registro sombra y giros en pivote.
 \end{enumerate}
 
 % ============================================================================
@@ -269,8 +287,9 @@ Bluetooth de un celular Android (clave 1234 o 0000). En la app \emph{Dabble}
 (STEMpedia), con la ubicación activa, conectar el HC-05 y abrir
 \emph{Gamepad}. Presionar varios botones hasta que el LED1 cambie con cada
 pulsación. La cruceta mueve el carro, el joystick lo maneja de forma
-proporcional, $\triangle$/$\times$ suben y bajan la velocidad y $\square$
-frena. El HC-05 no funciona con iPhone; para iPhone se necesita un módulo BLE
+proporcional, $\triangle$ y $\times$ suben y bajan la velocidad un
+\SI{10}{\percent}, $\bigcirc$ la pone al \SI{100}{\percent} y $\square$ frena
+mientras se mantiene. El carro arranca al \SI{80}{\percent}. El HC-05 no funciona con iPhone; para iPhone se necesita un módulo BLE
 (HM-10).
 
 % ============================================================================
@@ -282,8 +301,14 @@ frena. El HC-05 no funciona con iPhone; para iPhone se necesita un módulo BLE
         \SI{1250}{\hertz} y una escala exacta de 1000 pasos de 0.1\,\%.
   \item Una sola línea de dirección y un PWM por motor bastan para controlar
         velocidad, sentido y freno dinámico con el DRV8833.
-  \item El fallo principal fue de hardware (nSLEEP sin conexión). Se encontró
-        midiendo y comparando con la hoja de datos, no cambiando el código.
+  \item Las fallas principales fueron de hardware (nSLEEP sin conexión y un
+        corto de soldadura en IN1). Se encontraron midiendo con el multímetro,
+        con programas de prueba por pin y comparando con la hoja de datos.
+  \item El carro cumplió todos los movimientos y obtuvo el segundo lugar en la
+        competencia.
+  \item Por mejorar: movimientos más suaves (hoy son bruscos), girar mientras
+        avanza como un carro, reemplazar los retardos bloqueantes por
+        temporizadores, y mejorar el diseño mecánico y las soldaduras.
 \end{itemize}
 
 \noindent El código fuente, el informe técnico completo y las instrucciones
