@@ -18,6 +18,7 @@
 \usepackage{array}
 \usepackage{tabularx}
 \usepackage{graphicx}
+\usepackage[caption=false,font=footnotesize]{subfig}
 \graphicspath{{figuras/}}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, calc, shapes.geometric, babel}
@@ -85,6 +86,28 @@ DRV8833~\cite{drv8833}, y demostrar avance, reversa, giros y frenado sin
 reinicios del microcontrolador. Como extensión, el carro se maneja desde un
 celular con un control tipo gamepad.
 
+\subsection{Objetivo general}
+Implementar el control de velocidad, sentido de giro y frenado de una
+plataforma móvil diferencial con un PIC16F877A y un driver DRV8833, validado
+en simulación y en hardware real, y manejable de forma remota desde un
+celular.
+
+\subsection{Objetivos específicos}
+\begin{enumerate}
+  \item[OE1.] Configurar y sincronizar los módulos CCP1 (RC2) y CCP2 (RC1) en
+        modo PWM con Timer2 como base de tiempo única.
+  \item[OE2.] Integrar el DRV8833 para gobernar velocidad, sentido de giro y
+        frenado dinámico de dos motores DC.
+  \item[OE3.] Aplicar normas de montaje: masa común, habilitación por
+        nSLEEP, alimentación adecuada y soldadura correcta.
+  \item[OE4.] Desarrollar firmware modular en MPLAB XC8 para la navegación de
+        la plataforma, documentado con diagramas de flujo.
+  \item[OE5.] \emph{(Extensión propia)} Controlar el carro desde un celular
+        con una interfaz tipo gamepad, de forma robusta ante pérdidas de señal
+        y caídas de alimentación.
+\end{enumerate}
+
+\subsection{Organización del informe}
 Este informe presenta el hardware y su montaje (sección~\ref{s:hw}), la
 justificación matemática del PWM (sección~\ref{s:calc}), el firmware con sus
 diagramas de flujo (sección~\ref{s:fw}), la simulación
@@ -132,7 +155,30 @@ driver queda dormido (se midieron \SI{0.14}{\volt}). Una resistencia de
 \SI{10}{\kilo\ohm} a \SI{5}{\volt} formaba un divisor con esa resistencia y
 dejaba \SI{1.41}{\volt}, por debajo del umbral de \SI{2.5}{\volt}; se conectó
 EEP directo a \SI{5}{\volt}. La figura~\ref{f:carro} muestra el carro
-terminado.
+terminado, la figura~\ref{f:tarjeta} la tarjeta y la
+figura~\ref{f:proceso} el proceso de armado y grabación.
+
+\begin{figure}[!t]
+  \centering
+  \subfloat[]{\includegraphics[height=3.3cm]{tarjeta-pic-drv8833.jpg}\label{f:tarjeta-a}}
+  \hfil
+  \subfloat[]{\includegraphics[height=3.3cm]{tarjeta-reverso.jpg}\label{f:tarjeta-b}}
+  \caption{Tarjeta Electrónica Digital II 2026B: (a) PIC16F877A en TQFP-44 y
+  conector del DRV8833 (IN1, IN2, VCC, GND, IN3, IN4); (b) reverso con el
+  módulo DRV8833.}
+  \label{f:tarjeta}
+\end{figure}
+
+\begin{figure}[!t]
+  \centering
+  \subfloat[]{\includegraphics[height=3.6cm]{montaje-chasis.jpg}\label{f:proceso-a}}
+  \hfil
+  \subfloat[]{\includegraphics[height=3.6cm]{programacion-pickit3.jpg}\label{f:proceso-b}}
+  \caption{Proceso de montaje: (a) armado del chasis con los motorreductores
+  y el portapilas de dos baterías 18650; (b) grabación de la tarjeta con el
+  PICkit~3.}
+  \label{f:proceso}
+\end{figure}
 
 \begin{figure}[!t]
   \centering
@@ -357,6 +403,38 @@ acumular 24, la UART pasa a la siguiente velocidad de la lista (9600, 38400,
   \label{f:parser}
 \end{figure}
 
+\begin{table*}[!t]
+  \caption{Cumplimiento de los objetivos}
+  \label{t:obj}
+  \centering
+  \footnotesize
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.6cm} L >{\raggedright\arraybackslash}p{3.3cm} c@{}}
+    \toprule
+    \textbf{Objetivo} & \textbf{Resultado obtenido} & \textbf{Evidencia} & \textbf{Estado} \\
+    \midrule
+    OE1. PWM con CCP1, CCP2 y Timer2 &
+      Dos PWM de \SI{1250}{\hertz} ($PR2 = 249$, prescaler 1:16) con 1000 niveles ($\approx$10~bits), generados a la vez y sin uso de CPU. La frecuencia de \SI{1.2}{\kilo\hertz} pedida no es alcanzable con este cristal (sección~\ref{s:calc}). &
+      Ecs.~(1)--(5); osciloscopio en Proteus (fig.~\ref{f:proteus-sim}). & Cumplido \\
+    OE2. Control de los motores con el DRV8833 &
+      Avance, reversa, giros en pivote, freno dinámico y velocidad ajustable en pasos de \SI{10}{\percent}; freno de \SI{30}{\milli\second} antes de cada inversión. &
+      Tabla~\ref{t:res}; video de la demostración. & Cumplido \\
+    OE3. Normas de montaje &
+      Masa común, EEP (nSLEEP) a \SI{5}{\volt} directo, lógica con LM7805 y motores con dos 18650; sin reinicios del PIC durante la competencia. Se corrigieron un corto VDD--GND y un puente de estaño en IN1. &
+      Figs.~\ref{f:carro}, \ref{f:tarjeta} y \ref{f:corto}; tabla~\ref{t:prob}. & Cumplido \\
+    OE4. Firmware modular en XC8 &
+      Firmware en capas con dos modos (secuencia del taller y control remoto), registro sombra del puerto~D, watchdog y BOR. Compila sin errores; 22 pruebas automáticas de la lógica del mando en el computador. &
+      Figs.~\ref{f:sec}--\ref{f:gamepad}; repositorio. & Cumplido \\
+    OE5. Control desde el celular &
+      Mando Dabble por HC-05: cruceta, joystick proporcional y botones; detección automática de baudios y freno por pérdida de señal. &
+      Figs.~\ref{f:isr} y \ref{f:parser}; fig.~\ref{f:demo}. & Cumplido \\
+    \midrule
+    Objetivo general &
+      El carro cumplió todas las maniobras manejado desde el celular y obtuvo el \textbf{segundo lugar} en la competencia del curso. &
+      Video: \url{https://youtube.com/shorts/f3ZtwNBpTU8} & Cumplido \\
+    \bottomrule
+  \end{tabularx}
+\end{table*}
+
 \subsection{Ejecución de las órdenes del mando}
 
 La figura~\ref{f:gamepad} muestra cómo se convierte una trama en la velocidad
@@ -417,6 +495,47 @@ que va hacia atrás se detiene.
   \label{f:gamepad}
 \end{figure}
 
+\begin{table}[!t]
+  \caption{Pruebas por etapas en la tarjeta}
+  \label{t:res}
+  \centering
+  \footnotesize
+  \begin{tabularx}{\columnwidth}{@{}l L c@{}}
+    \toprule
+    \textbf{Prueba} & \textbf{Observación} & \textbf{Resultado} \\
+    \midrule
+    LEDs & Secuencia LED1, LED2, LED3 & Correcto \\
+    Driver (EEP a \SI{5}{\volt}) & Los dos motores responden & Correcto \\
+    Enlace Bluetooth & LED1 cambia con cada trama de Dabble & Correcto \\
+    Avance y reversa & Las dos ruedas en el sentido pedido & Correcto \\
+    Giros & En pivote: una rueda avanza y la otra frena & Correcto \\
+    Velocidad & Pasos de \SI{10}{\percent} desde el mando & Correcto \\
+    Detención & El carro frena al soltar los controles & Correcto \\
+    Competencia & Recorrido completo desde el celular & 2.º lugar \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{table}[!t]
+  \caption{Fallas y solución}
+  \label{t:prob}
+  \centering
+  \footnotesize
+  \begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}p{2.6cm} L@{}}
+    \toprule
+    \textbf{Falla} & \textbf{Causa y solución} \\
+    \midrule
+    Motores sin movimiento & EEP sin conectar; EEP directo a \SI{5}{\volt}. \\
+    Comandos mal leídos & HC-05 a otra velocidad; detección automática de baudios. \\
+    Reinicios al arrancar & Pila de \SI{9}{\volt} insuficiente; baterías 18650 y freno por pérdida de señal. \\
+    No graba una tarjeta & ICSP conectado al revés dañó el PIC; se usó otra tarjeta. \\
+    VDD en corto con GND & Se soldó por la cara inferior, que es plano de tierra; se cambió de tarjeta y por esa cara solo se sueldan los pines de GND. \\
+    Motor izquierdo siempre encendido & Puente de estaño entre IN1 y RD2/RD3; esos pines como entradas y se retiró el puente. \\
+    Giros con zumbido & Escritura bit a bit del puerto~D; registro sombra y giros en pivote. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
 % ============================================================================
 \section{Simulación en Proteus}
 \label{s:sim}
@@ -445,33 +564,30 @@ antes de grabar la tarjeta.
 \section{Resultados}
 \label{s:res}
 
-Antes del código de los motores se grabó un programa que enciende los tres
-LEDs en secuencia (\texttt{prueba\_leds.c}) para comprobar el PIC, el cristal
-y la grabación con el PICkit~3. Luego se probaron las maniobras con el
-celular; la tabla~\ref{t:res} resume los resultados. El carro completó el
-recorrido de la competencia del curso y obtuvo el \textbf{segundo lugar}
-(video: \url{https://youtube.com/shorts/f3ZtwNBpTU8}). No se registraron
-mediciones del PWM con osciloscopio en el hardware; la frecuencia se verificó
-en la simulación.
+La tabla~\ref{t:obj} contrasta cada objetivo con lo obtenido y con la
+evidencia que lo respalda. Las pruebas se hicieron por etapas: primero se
+grabó un programa que solo enciende los tres LEDs en secuencia
+(\texttt{prueba\_leds.c}) para comprobar el PIC, el cristal y la grabación;
+luego se probaron el driver, la alimentación, el enlace Bluetooth y, al final,
+las maniobras desde el celular (tabla~\ref{t:res}).
 
-\begin{table}[!t]
-  \caption{Resultados en la tarjeta}
-  \label{t:res}
+
+
+
+
+\begin{figure}[!t]
   \centering
-  \footnotesize
-  \begin{tabularx}{\columnwidth}{@{}l L c@{}}
-    \toprule
-    \textbf{Prueba} & \textbf{Observación} & \textbf{Resultado} \\
-    \midrule
-    LEDs & Secuencia LED1, LED2, LED3 & Correcto \\
-    Avance y reversa & Las dos ruedas en el sentido pedido & Correcto \\
-    Giros & En pivote: una rueda avanza y la otra frena & Correcto \\
-    Velocidad & Pasos de \SI{10}{\percent} desde el mando & Correcto \\
-    Celular & Cruceta, joystick y botones de Dabble & Correcto \\
-    Competencia & Recorrido completo desde el celular & 2.º lugar \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+  \includegraphics[height=6.2cm]{carro-lateral.jpg}
+  \caption{Carro listo para la demostración: tarjeta con el HC-05 montada
+  sobre el chasis, con los motorreductores y las ruedas.}
+  \label{f:demo}
+\end{figure}
+
+La frecuencia del PWM se verificó en la simulación; en la tarjeta la
+verificación fue funcional, porque no se registraron mediciones con
+osciloscopio en el hardware. Los movimientos fueron correctos pero bruscos:
+la velocidad cambia en escalones y los giros en pivote obligan a detener una
+rueda.
 
 % ============================================================================
 \section{Problemas encontrados y solución}
@@ -483,25 +599,7 @@ multímetro, con programas de prueba que activan un pin a la vez y comparando
 con las hojas de datos. La figura~\ref{f:corto} muestra el origen del corto
 de la primera tarjeta.
 
-\begin{table}[!t]
-  \caption{Fallas y solución}
-  \label{t:prob}
-  \centering
-  \footnotesize
-  \begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}p{2.6cm} L@{}}
-    \toprule
-    \textbf{Falla} & \textbf{Causa y solución} \\
-    \midrule
-    Motores sin movimiento & EEP sin conectar; EEP directo a \SI{5}{\volt}. \\
-    Comandos mal leídos & HC-05 a otra velocidad; detección automática de baudios. \\
-    Reinicios al arrancar & Pila de \SI{9}{\volt} insuficiente; baterías 18650 y freno por pérdida de señal. \\
-    No graba una tarjeta & ICSP conectado al revés dañó el PIC; se usó otra tarjeta. \\
-    VDD en corto con GND & Se soldó por la cara inferior, que es plano de tierra; se cambió de tarjeta y por esa cara solo se sueldan los pines de GND. \\
-    Motor izquierdo siempre encendido & Puente de estaño entre IN1 y RD2/RD3; esos pines como entradas y se retiró el puente. \\
-    Giros con zumbido & Escritura bit a bit del puerto~D; registro sombra y giros en pivote. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+
 
 \begin{figure}[!t]
   \centering

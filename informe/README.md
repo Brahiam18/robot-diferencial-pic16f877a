@@ -5,7 +5,7 @@ Informes del **Taller Práctico II: Control dual de motores y robótica móvil d
 | Archivo | Qué es |
 | --- | --- |
 | `main.tex` | **Informe técnico completo** (portafolio): arquitectura, potencia, cálculos, firmware, protocolo Dabble, programación, depuración en hardware y anexos de código |
-| `informe_docente.tex` | **Informe para el docente en formato IEEE** (5 páginas, clase `IEEEtran`): montaje, cálculos, firmware con diagramas de flujo, simulación, resultados y fallas |
+| `informe_docente.tex` | **Informe para el docente en formato IEEE** (6 páginas, clase `IEEEtran`): objetivos, montaje, cálculos, firmware con diagramas de flujo, simulación, resultados por objetivo y fallas |
 
 > Estado: **versión final (1.0)**, con fotografías del montaje, capturas de Proteus,
 > resultados de las pruebas y el resultado de la competencia (segundo lugar).
