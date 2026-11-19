@@ -5,7 +5,7 @@ Informes del **Taller Práctico II: Control dual de motores y robótica móvil d
 | Archivo | Qué es |
 | --- | --- |
 | `main.tex` | **Informe técnico completo** (portafolio): arquitectura, potencia, cálculos, firmware, protocolo Dabble, programación, depuración en hardware y anexos de código |
-| `informe_docente.tex` | **Informe corto para el docente** (7 páginas): montaje, cálculos de la guía, código, simulación, demostración e instrucciones de uso |
+| `informe_docente.tex` | **Informe para el docente en formato IEEE** (5 páginas, clase `IEEEtran`): montaje, cálculos, firmware con diagramas de flujo, simulación, resultados y fallas |
 
 > Estado: **versión final (1.0)**, con fotografías del montaje, capturas de Proteus,
 > resultados de las pruebas y el resultado de la competencia (segundo lugar).
@@ -34,6 +34,8 @@ latexmk -pdf informe_docente.tex   # informe corto
 ```
 
 o, sin latexmk, `pdflatex main.tex` dos veces (la segunda arma el índice y las referencias).
+
+El informe para el docente usa la clase `IEEEtran` (en Linux, paquete `texlive-publishers`; viene incluida en MiKTeX y Overleaf).
 
 Paquetes usados: `babel` (español), `lmodern`, `siunitx`, `booktabs`, `tabularx`, `tikz`,
 `listings`, `hyperref`, `fancyhdr`, `titlesec`, `tocloft`, `enumitem`, `float`, `caption`.

@@ -1,404 +1,516 @@
 % ============================================================================
-%  Informe corto para el docente - Taller Práctico II
+%  Informe para el docente - Taller Práctico II (formato IEEE)
 %  Compilar:  latexmk -pdf informe_docente.tex
-%  Usa los mismos estilos (config.tex) y el mismo firmware que el informe largo.
+%  Requiere la clase IEEEtran (paquete texlive-publishers en Linux; incluida
+%  en MiKTeX y en Overleaf).
 % ============================================================================
-\documentclass[11pt,letterpaper]{article}
+\documentclass[conference,letterpaper]{IEEEtran}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish,es-tabla,es-nodecimaldot]{babel}
 \usepackage{lmodern}
 \usepackage{microtype}
-\usepackage[margin=2.2cm]{geometry}
-\usepackage{fancyhdr}
-\usepackage{titlesec}
-\usepackage{enumitem}
-\setlist{itemsep=1pt, topsep=3pt}
 \usepackage{amsmath,amssymb}
 \usepackage{siunitx}
 \sisetup{output-decimal-marker={.}, group-separator={\,}, per-mode=symbol}
 \usepackage{booktabs}
-\usepackage{tabularx}
 \usepackage{array}
-\usepackage{float}
+\usepackage{tabularx}
 \usepackage{graphicx}
-\usepackage{caption}
-\captionsetup{font=small, labelfont=bf, skip=4pt}
-\usepackage{subcaption}
 \graphicspath{{figuras/}}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta, positioning, calc, fit, babel}
+\usetikzlibrary{arrows.meta, positioning, calc, shapes.geometric, babel}
 \usepackage{xcolor}
-\usepackage{listings}
+\usepackage{url}
+\usepackage{placeins}
 \usepackage[hidelinks]{hyperref}
 
-\input{config}
-\renewcommand{\versiondoc}{1.0}
-\titlespacing*{\section}{0pt}{12pt}{5pt}
-\titlespacing*{\subsection}{0pt}{8pt}{4pt}
-\renewcommand{\arraystretch}{1.15}
+\renewcommand{\IEEEkeywordsname}{Palabras clave}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+% ---------------------- Estilos de los diagramas de flujo --------------------
+\tikzset{
+  flujo/.style={font=\scriptsize, >={Stealth[length=1.6mm]},
+                node distance=3.2mm, every node/.style={align=center}},
+  term/.style={draw, rounded corners=6pt, minimum width=1.9cm, minimum height=5mm, fill=gray!12},
+  proc/.style={draw, minimum width=3.2cm, minimum height=5mm, text width=3.0cm},
+  dec/.style={draw, diamond, aspect=2.6, inner sep=0.6pt, text width=1.75cm},
+  fl/.style={->, line width=0.5pt},
+  si/.style={font=\tiny, above, pos=0.3},
+  no/.style={font=\tiny, right, pos=0.25},
+}
 
 \begin{document}
 
-% ---------------------------- Encabezado ------------------------------------
-\begin{center}
-  {\small\scshape \universidad\ --- \programa\par}
-  \vspace{2pt}
-  {\small \asignatura\par}
-  \vspace{8pt}
-  {\LARGE\bfseries\color{acento} Taller Práctico II: control dual de motores\par}
-  \vspace{2pt}
-  {\large Robot móvil diferencial con PIC16F877A y DRV8833\par}
-  \vspace{8pt}
-  {\small
-  \textbf{Autor:} Brahiam Alberto Campiño Romero
-  \quad\textbf{Fecha:} \fecha\par}
-  \vspace{2pt}
-  {\color{acento}\rule{\textwidth}{0.8pt}}
-\end{center}
+\title{Control dual de motores para un robot móvil diferencial con
+PIC16F877A, DRV8833 y mando Bluetooth}
 
-\noindent\textbf{Resultado.} El carro funcionó completo en la tarjeta del
-curso y obtuvo el \textbf{segundo lugar} en la competencia. Se configuró el PWM
-de hardware (CCP1 y CCP2 con Timer2) a \SI{1250}{\hertz} con resolución de
-10~bits y se implementó el control de los dos motores con el DRV8833: avance,
-reversa, giros a la izquierda y a la derecha y freno dinámico. Como extensión,
-el carro se maneja desde un celular Android con un control tipo gamepad por
-Bluetooth (HC-05). Para que funcionara en la tarjeta se corrigieron dos fallas
-de hardware (EEP sin conectar y un corto en IN1) y una de firmware (escritura
-del puerto~D), descritas en las secciones~\ref{c:montaje} y~\ref{c:demo}.
-Video de la demostración: \url{https://youtube.com/shorts/f3ZtwNBpTU8}.
+\author{\IEEEauthorblockN{Brahiam Alberto Campiño Romero}
+\IEEEauthorblockA{Programa de Ingeniería Electrónica\\
+Universidad de Ibagué, Ibagué, Colombia\\
+Microcontroladores y Sistemas Embebidos --- Taller Práctico II}}
+
+\maketitle
 
 % ============================================================================
-\section{Montaje físico y DRV8833}
-\label{c:montaje}
+\begin{abstract}
+Se implementó el control de velocidad, sentido de giro y frenado de un robot
+móvil diferencial con un microcontrolador PIC16F877A a \SI{20}{\mega\hertz} y
+el doble puente H DRV8833. Los módulos CCP1 y CCP2, sincronizados por Timer2,
+generan dos señales PWM de \SI{1250}{\hertz} con 1000 niveles de ciclo de
+trabajo. El firmware, escrito en C con MPLAB XC8, ejecuta la secuencia de
+validación del taller o recibe órdenes desde un celular Android con la
+aplicación Dabble a través de un módulo Bluetooth HC-05; las tramas se
+decodifican con una máquina de estados en la interrupción de la UART. El
+sistema se validó en Proteus y en la tarjeta del curso, donde se corrigieron
+fallas de habilitación del driver, de soldadura y de escritura del puerto~D.
+El carro cumplió todas las maniobras y obtuvo el segundo lugar en la
+competencia del curso.
+\end{abstract}
 
-\begin{table}[H]
+\begin{IEEEkeywords}
+PIC16F877A, DRV8833, PWM, robot móvil diferencial, puente H, Bluetooth,
+máquina de estados, sistemas embebidos.
+\end{IEEEkeywords}
+
+% ============================================================================
+\section{Introducción}
+
+Un robot móvil diferencial se desplaza con dos ruedas motrices
+independientes: velocidades iguales producen traslación y velocidades
+distintas producen giro. El Taller Práctico II~\cite{guia} pide controlar dos
+motores DC con el PWM de hardware del PIC16F877A~\cite{pic16f877a} y el driver
+DRV8833~\cite{drv8833}, y demostrar avance, reversa, giros y frenado sin
+reinicios del microcontrolador. Como extensión, el carro se maneja desde un
+celular con un control tipo gamepad.
+
+Este informe presenta el hardware y su montaje (sección~\ref{s:hw}), la
+justificación matemática del PWM (sección~\ref{s:calc}), el firmware con sus
+diagramas de flujo (sección~\ref{s:fw}), la simulación
+(sección~\ref{s:sim}), los resultados (sección~\ref{s:res}) y los problemas
+resueltos (sección~\ref{s:prob}).
+
+% ============================================================================
+\section{Hardware y montaje}
+\label{s:hw}
+
+Se usó la tarjeta Electrónica Digital II 2026B del curso, con el PIC16F877A en
+encapsulado TQFP-44, el módulo DRV8833, un zócalo para el HC-05, tres LEDs y el
+conector ICSP. La tabla~\ref{t:pines} resume las conexiones.
+
+\begin{table}[!t]
+  \caption{Conexiones en la tarjeta (PIC16F877A, TQFP-44)}
+  \label{t:pines}
   \centering
-  \caption{Conexiones en la tarjeta (PIC16F877A en TQFP-44).}
-  \label{c:tab:pines}
-  \small
-  \begin{tabularx}{\textwidth}{@{}l c l L@{}}
+  \footnotesize
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabular}{@{}l c l l@{}}
     \toprule
-    \textbf{Pin PIC} & \textbf{Pata} & \textbf{Destino} & \textbf{Función} \\
+    \textbf{Pin} & \textbf{Pata} & \textbf{Destino} & \textbf{Función} \\
     \midrule
-    RC2 / CCP1 & 36 & MIPWM (IN2) & PWM del motor izquierdo \\
-    RD0        & 38 & MIPIN (IN1) & Dirección del motor izquierdo \\
-    RC1 / CCP2 & 35 & MDPWM (IN3) & PWM del motor derecho \\
-    RD1        & 39 & MDPIN (IN4) & Dirección del motor derecho \\
-    RC7 / RX, RC6 / TX & 1, 44 & HC-05 & Comandos desde el celular \\
-    RB5, RB4, RB3 & 15, 14, 11 & LED1--LED3 & Diagnóstico \\
-    MCLR, RB6, RB7 & 18, 16, 17 & ICSP & Programación con PICkit~3 \\
+    RC2/CCP1 & 36 & IN2 & PWM motor izquierdo \\
+    RD0      & 38 & IN1 & Dirección motor izq. \\
+    RC1/CCP2 & 35 & IN3 & PWM motor derecho \\
+    RD1      & 39 & IN4 & Dirección motor der. \\
+    RC7, RC6 & 1, 44 & HC-05 & UART (RX, TX) \\
+    RB5--RB3 & 15, 14, 11 & LED1--LED3 & Diagnóstico \\
+    MCLR, RB6, RB7 & 18, 16, 17 & ICSP & PICkit~3 \\
     \bottomrule
-  \end{tabularx}
+  \end{tabular}
 \end{table}
 
-\begin{itemize}
-  \item \textbf{Alimentación y masa común:} lógica a \SI{5}{\volt} con LM7805;
-        motores desde la batería (VM $\leq$ \SI{10}{\volt}) con GND común cerca
-        del DRV8833. Una pila de \SI{9}{\volt} no soporta el arranque de los
-        motores (el PIC y el HC-05 se reinician); se usan dos baterías 18650
-        (\SI{7.4}{\volt}).
-  \item \textbf{Desacoplo:} \SI{0.1}{\micro\farad} en VDD--VSS del PIC;
-        \SI{100}{\micro\farad} en paralelo con \SI{0.1}{\micro\farad} en
-        VM--GND del driver; \SI{0.1}{\micro\farad} en los terminales de cada
-        motor; cristal de \SI{20}{\mega\hertz} con \SI{22}{\pico\farad}.
-  \item \textbf{ICSP activo:} MCLR, RB6 y RB7 quedan libres para el PICkit~3.
-        El conector debe ir con la flecha del pin~1 hacia la marca de la
-        tarjeta: conectado al revés aplica unos \SI{13}{\volt} en RB3/PGM, y así
-        se dañó el PIC de una de las tarjetas.
-  \item \textbf{nSLEEP (EEP):} en la tarjeta este pin no está conectado. El
-        DRV8833 lo lleva a GND internamente, así que el driver queda dormido:
-        se midieron \SI{0.14}{\volt}. Con una resistencia de
-        \SI{10}{\kilo\ohm} a \SI{5}{\volt} se midieron \SI{1.41}{\volt}, porque
-        el módulo tiene su propio \emph{pull-down} y se forma un divisor; ese
-        valor está por debajo del umbral de \SI{2.5}{\volt} de la hoja de datos.
-        Se conectó EEP directo a \SI{5}{\volt} (VCC del HC-05). En protoboard el
-        firmware genera el pulso de activación por RD2.
-  \item \textbf{Corto en IN1:} la pista de IN1 (MIPIN) quedó unida por
-        soldadura a las patas 40 y 41 (RD2 y RD3). El firmware las deja como
-        entradas (\texttt{TARJETA\_CURSO = 1}) para que no lleven IN1 a otro
-        nivel, y luego se retiró el puente de estaño.
-\end{itemize}
+El DRV8833 controla cada motor con dos entradas: 10 avance, 01 reversa,
+00 parada libre y 11 freno~\cite{drv8833}. La lógica se alimenta a
+\SI{5}{\volt} con un LM7805 y los motores con dos baterías 18650
+(\SI{7.4}{\volt}), con masa común cerca del driver. Una pila de \SI{9}{\volt}
+no soportó la corriente de arranque: el PIC y el HC-05 se reiniciaban.
 
-\begin{figure}[H]
-  \centering
-  \begin{subfigure}[b]{0.62\textwidth}
-    \centering
-    \includegraphics[height=5.6cm]{carro-frente.jpg}
-    \caption{Vista frontal: tarjeta del curso sobre el chasis.}
-  \end{subfigure}\hfill
-  \begin{subfigure}[b]{0.36\textwidth}
-    \centering
-    \includegraphics[height=5.6cm]{carro-lateral.jpg}
-    \caption{Vista lateral con el HC-05.}
-  \end{subfigure}
-  \caption{Carro terminado: tarjeta con PIC16F877A, DRV8833 y HC-05 sobre el
-  chasis con dos motorreductores y baterías 18650.}
-  \label{c:fig:carro}
-\end{figure}
+El pin de habilitación nSLEEP (EEP en el módulo) no está conectado en la
+tarjeta y el driver lo lleva a GND con una resistencia interna, así que el
+driver queda dormido (se midieron \SI{0.14}{\volt}). Una resistencia de
+\SI{10}{\kilo\ohm} a \SI{5}{\volt} formaba un divisor con esa resistencia y
+dejaba \SI{1.41}{\volt}, por debajo del umbral de \SI{2.5}{\volt}; se conectó
+EEP directo a \SI{5}{\volt}. La figura~\ref{f:carro} muestra el carro
+terminado.
 
-\begin{figure}[H]
+\begin{figure}[!t]
   \centering
-  \begin{subfigure}[b]{0.6\textwidth}
-    \centering
-    \includegraphics[height=5.4cm]{tarjeta-pic-drv8833.jpg}
-    \caption{PIC16F877A (TQFP-44) y conector del DRV8833 (IN1, IN2, VCC, GND, IN3, IN4).}
-  \end{subfigure}\hfill
-  \begin{subfigure}[b]{0.38\textwidth}
-    \centering
-    \includegraphics[height=5.4cm]{tarjeta-reverso.jpg}
-    \caption{Reverso con el módulo DRV8833.}
-  \end{subfigure}
-  \caption{Tarjeta Electrónica Digital II 2026B usada en el montaje.}
-  \label{c:fig:tarjeta}
+  \includegraphics[width=\columnwidth]{carro-frente.jpg}
+  \caption{Carro terminado: tarjeta del curso con PIC16F877A, DRV8833 y HC-05
+  sobre el chasis con dos motorreductores y baterías 18650.}
+  \label{f:carro}
 \end{figure}
 
 % ============================================================================
-\section{Justificación matemática}
+\section{Justificación matemática del PWM}
+\label{s:calc}
 
-\noindent\textbf{1. Ciclo de instrucción.}
-\begin{equation*}
-  T_{osc} = \frac{1}{\SI{20}{\mega\hertz}} = \SI{50}{\nano\second}
-  \qquad
-  T_{cy} = 4\,T_{osc} = \SI{200}{\nano\second}
-  \qquad
-  F_{cy} = \SI{5}{\mega\hertz}
-\end{equation*}
-
-\noindent\textbf{2. Registro PR2 (prescaler 1:16).}
-\begin{equation*}
+Con $F_{osc} = \SI{20}{\mega\hertz}$, el ciclo de instrucción es
+$T_{cy} = 4/F_{osc} = \SI{200}{\nano\second}$. El periodo del PWM del
+PIC16F877A~\cite{pic16f877a} es
+\begin{equation}
+  T_{PWM} = (PR2 + 1)\cdot 4\cdot T_{osc}\cdot \text{Pre}.
+  \label{e:tpwm}
+\end{equation}
+Para \SI{1.2}{\kilo\hertz} con prescaler 1:16 se necesitaría
+\begin{equation}
   PR2 = \frac{F_{osc}}{4\cdot \text{Pre}\cdot F_{PWM}} - 1
-      = \frac{\num{20000000}}{4\cdot 16\cdot 1200} - 1 = 259.42
-\end{equation*}
-PR2 es de 8~bits (máximo 255), así que \SI{1.2}{\kilo\hertz} no es alcanzable:
-la frecuencia mínima con este cristal y prescaler es
-$\num{20000000}/(64\cdot 256) = \SI{1220.7}{\hertz}$. Se usa $PR2 = 249$:
-\begin{equation*}
-  F_{PWM} = \frac{\num{20000000}}{4\cdot 16\cdot 250} = \SI{1250}{\hertz}
-  \qquad
-  T_{PWM} = \SI{800}{\micro\second}
-\end{equation*}
-con un error de \SI{4.2}{\percent} frente a los \SI{1.2}{\kilo\hertz} pedidos.
-Se elige 249 y no 255 porque deja exactamente 1000 pasos por periodo, y el
-ciclo de trabajo se escribe directamente en escala 0--1000.
-
-\noindent\textbf{3. Resolución del ciclo de trabajo (10 bits).}
-\begin{gather*}
-  T_{on} = DC\cdot T_{osc}\cdot\text{Pre} = DC\cdot\SI{0.8}{\micro\second}
-  \qquad
-  \text{pasos} = 4\,(PR2+1) = 1000 \\
-  \text{resolución} = \log_2 1000 = 9.97~\text{bits}
-  \qquad
-  \Delta D = \SI{0.1}{\percent}
-\end{gather*}
-El valor de 10~bits se reparte en CCPR$x$L (8~bits altos) y CCP$x$X:CCP$x$Y
-(2~bits bajos). Por ejemplo, $DC = 500$ da CCPR$x$L = 125, X:Y = 00 y
-$T_{on} = \SI{400}{\micro\second}$ (50\,\%).
+      = \frac{\num{20000000}}{4\cdot 16\cdot 1200} - 1 = 259.4,
+\end{equation}
+que no cabe en un registro de 8~bits (máximo 255). La frecuencia mínima con
+este cristal y prescaler es $\num{20000000}/(64\cdot 256) =
+\SI{1220.7}{\hertz}$. Se eligió $PR2 = 249$:
+\begin{equation}
+  F_{PWM} = \frac{\num{20000000}}{4\cdot 16\cdot 250} = \SI{1250}{\hertz},
+  \qquad T_{PWM} = \SI{800}{\micro\second},
+\end{equation}
+con un error de \SI{4.2}{\percent} frente a lo pedido. Con este valor el
+ciclo de trabajo tiene exactamente $4(PR2+1) = 1000$ pasos:
+\begin{gather}
+  T_{on} = DC\cdot T_{osc}\cdot\text{Pre} = DC\cdot\SI{0.8}{\micro\second},\\
+  \text{resolución} = \log_2 1000 = 9.97~\text{bits},
+\end{gather}
+de modo que el firmware escribe el ciclo directamente en escala 0--1000
+($\Delta D = \SI{0.1}{\percent}$). Por ejemplo, $DC = 500$ da CCPR$x$L = 125,
+CCP$x$X:CCP$x$Y = 00 y $T_{on} = \SI{400}{\micro\second}$.
 
 % ============================================================================
-\section{Estructura del código XC8}
+\section{Firmware}
+\label{s:fw}
 
-Se implementó el código de la guía y se amplió en un archivo propio,
-organizado por capas:
-
-\begin{table}[H]
+\begin{figure*}[!t]
   \centering
-  \caption{Funciones principales.}
-  \small
-  \begin{tabularx}{\textwidth}{@{}>{\ttfamily\raggedright\arraybackslash}p{5.0cm} L@{}}
-    \toprule
-    \textbf{\normalfont Función} & \textbf{Qué hace} \\
-    \midrule
-    PWM\_Init() & PR2 = 249, CCP1/CCP2 en PWM, Timer2 con prescaler 1:16. \\
-    Set\_Duty\_Motor\_Izq/\allowbreak Der(duty) & Carga el valor de 10~bits en CCPR$x$L y CCP$x$X:CCP$x$Y. \\
-    Motor\_Izquierdo/\allowbreak Derecho(speed, dir) & Avance: dirección = 0 y PWM directo. Reversa: dirección = 1 y PWM invertido (1000 $-$ speed). \\
-    Freno\_General() & $x$IN1 = $x$IN2 = 1 en ambos canales: freno dinámico. \\
-    Mover(), Rampa\_Subir/\allowbreak Bajar() & Avance, reversa y giros. En la secuencia del taller, rampas de 0 a 1000 en pasos de 50 cada \SI{100}{\milli\second}. \\
-    Procesar\_Byte(), \allowbreak Comando\_Gamepad() & Recepción por interrupción de los comandos del celular. \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+  \includegraphics[width=0.82\textwidth]{proteus-esquematico.png}
+  \caption{Esquemático en Proteus: PIC16F877A, L293D en lugar del DRV8833,
+  dos motores DC, terminal virtual (HC-05) y osciloscopio.}
+  \label{f:proteus}
+\end{figure*}
 
-\noindent\textbf{Lógica de dirección y frenado.} Con la dirección en 0, el PWM
-alterna entre avance (10) y parada libre (00). Con la dirección en 1, alterna
-entre reversa (01) y freno (11); como el motor solo empuja mientras el PWM está
-en 0, el ciclo se invierte para que la velocidad siga siendo proporcional al
-valor pedido. Antes de invertir el sentido de una rueda se frena
-\SI{30}{\milli\second} para limitar el pico de corriente.
+El firmware se escribió en C con MPLAB XC8~\cite{xc8} y se organiza en capas:
+hardware (PWM, UART), control por motor, navegación y comunicación. La
+directiva \texttt{MODO\_BLUETOOTH} elige en compilación entre la secuencia del
+taller (modo~0) y el control remoto (modo~1). Los bits de configuración usan
+oscilador HS, watchdog (\SI{2.3}{\second}), reinicio por bajo voltaje y
+LVP desactivado para poder usar RB3 como salida.
 
-\noindent\textbf{Cambios respecto al código de la guía:}
-\begin{itemize}
-  \item Se agregaron los giros a la izquierda y a la derecha, que la rúbrica
-        evalúa y la secuencia base no tenía. En la tarjeta se usan giros en
-        pivote (una rueda avanza y la otra queda frenada); el giro sobre su eje,
-        con las ruedas en sentidos opuestos, queda disponible con
-        \texttt{GIRO\_SOBRE\_EJE = 1}.
-  \item Los pines de dirección (RD0 y RD1) se escriben a través de una copia
-        del puerto~D en memoria (registro sombra). El PIC16F877A no tiene
-        registro LAT: escribir un bit lee el puerto completo, y un pin cargado
-        por el circuito podía cambiar el valor de los demás.
-  \item Se agregó el pulso de activación de nSLEEP (por RD2, solo para el
-        montaje en protoboard).
-  \item El texto copiado del PDF impedía compilar (los encabezados de página
-        quedaron dentro del código); se limpió.
-  \item Control remoto con la app Dabble: cruceta, joystick proporcional
-        (mezcla $v_{izq} = v_y + v_x$, $v_{der} = v_y - v_x$) y botones de
-        velocidad. El PIC detecta solo la velocidad en baudios del HC-05 y
-        frena si se pierde la señal.
-  \item Watchdog y reinicio por bajo voltaje activos, para que una caída de la
-        batería reinicie el PIC en vez de bloquearlo.
-\end{itemize}
-Los dos programas compilan con MPLAB XC8 sin errores. La lógica del control
-remoto se verificó además en el computador con 22 pruebas automáticas.
+\subsection{Control de cada motor}
+
+En avance la línea de dirección vale 0 y el PWM se aplica directo: el driver
+alterna entre avance (10) y parada libre (00). En reversa la dirección vale 1
+y el ciclo se invierte ($1000 - v$), porque el motor solo empuja mientras el
+PWM está en 0: el driver alterna entre reversa (01) y freno (11). Antes de
+invertir el sentido de una rueda se frena \SI{30}{\milli\second} para limitar
+el pico de corriente. Las líneas de dirección se escriben a través de una
+copia del puerto~D en memoria (registro sombra), porque el PIC16F877A no tiene
+registro LAT y una escritura bit a bit puede alterar los otros pines del
+puerto.
+
+\subsection{Modo 0: secuencia del taller}
+
+La figura~\ref{f:sec} muestra la secuencia de validación pedida por la guía:
+avance y reversa con rampas de 0 a 1000 en pasos de 50 cada
+\SI{100}{\milli\second}, giros a la izquierda y a la derecha y frenado
+dinámico entre etapas.
+
+\begin{figure}[!t]
+  \centering
+  \begin{tikzpicture}[flujo]
+    \node[term] (a) {Inicio};
+    \node[proc, below=of a] (b) {PWM\_Init(): PR2 = 249, Timer2 1:16, CCP1 y CCP2 en PWM};
+    \node[proc, below=of b] (c) {Parada libre y activación de nSLEEP};
+    \node[proc, below=of c] (d) {Avance: rampa 0 $\rightarrow$ 1000, \SI{1}{\second} y rampa de bajada};
+    \node[proc, below=of d] (e) {Freno \SI{0.5}{\second}};
+    \node[proc, below=of e] (f) {Reversa: rampa, \SI{1}{\second} y rampa de bajada};
+    \node[proc, below=of f] (g) {Freno \SI{0.5}{\second}};
+    \node[proc, below=of g] (h) {Giro izquierda (v = 600) \SI{1}{\second} y freno \SI{0.5}{\second}};
+    \node[proc, below=of h] (i) {Giro derecha (v = 600) \SI{1}{\second}};
+    \node[proc, below=of i] (j) {Freno total \SI{2}{\second}};
+    \foreach \u/\v in {a/b,b/c,c/d,d/e,e/f,f/g,g/h,h/i,i/j} \draw[fl] (\u) -- (\v);
+    \draw[fl] (j.west) -- ++(-0.5,0) |- (d.west);
+  \end{tikzpicture}
+  \caption{Diagrama de flujo del modo~0 (secuencia del taller).}
+  \label{f:sec}
+\end{figure}
+
+\subsection{Modo 1: programa principal}
+
+En el modo~1 (figura~\ref{f:main}) el lazo principal se repite cada
+milisegundo. La interrupción de la UART solo decodifica los bytes y deja
+banderas; el lazo copia la última orden con las interrupciones desactivadas
+(copia atómica), la ejecuta, actualiza los LEDs de diagnóstico y revisa el
+freno por pérdida de señal. \texttt{CLRWDT()} en cada vuelta evita que el
+watchdog reinicie el PIC mientras el programa funcione.
+
+\begin{figure}[!t]
+  \centering
+  \begin{tikzpicture}[flujo]
+    \node[term] (a) {Inicio};
+    \node[proc, below=of a] (b) {Tres parpadeos de los LEDs (señal de arranque)};
+    \node[proc, below=of b] (c) {PWM\_Init(), activación de nSLEEP, UART\_Init() (9600 baudios, interrupción de RX)};
+    \node[proc, below=of c] (d) {Freno\_General()};
+    \node[proc, below=of d] (e) {CLRWDT()};
+    \node[dec, below=of e] (f) {¿Trama de gamepad?};
+    \node[proc, right=6mm of f, text width=1.9cm, minimum width=2.1cm] (f2) {Comando\_\allowbreak Gamepad()};
+    \node[dec, below=of f] (g) {¿Letra recibida?};
+    \node[proc, right=6mm of g, text width=1.9cm, minimum width=2.1cm] (g2) {Comando\_\allowbreak Letra()};
+    \node[dec, below=of g] (h) {¿Dabble pide ID?};
+    \node[proc, right=6mm of h, text width=1.9cm, minimum width=2.1cm] (h2) {Enviar ID de tarjeta};
+    \node[proc, below=of h] (i) {Actualizar LEDs de diagnóstico};
+    \node[proc, below=of i] (j) {Failsafe\_1ms(): freno si hay errores de trama o silencio};
+    \node[proc, below=of j] (k) {Esperar \SI{1}{\milli\second}};
+    \foreach \u/\v in {a/b,b/c,c/d,d/e,e/f} \draw[fl] (\u) -- (\v);
+    \draw[fl] (f) -- node[no] {No} (g);
+    \draw[fl] (g) -- node[no] {No} (h);
+    \draw[fl] (h) -- node[no] {No} (i);
+    \draw[fl] (i) -- (j); \draw[fl] (j) -- (k);
+    \draw[fl] (f) -- node[si] {Sí} (f2);
+    \draw[fl] (g) -- node[si] {Sí} (g2);
+    \draw[fl] (h) -- node[si] {Sí} (h2);
+    \draw[fl] (f2.south) |- ($(f.south)!0.5!(g.north)$);
+    \draw[fl] (g2.south) |- ($(g.south)!0.5!(h.north)$);
+    \draw[fl] (h2.south) |- ($(h.south)!0.5!(i.north)$);
+    \draw[fl] (k.west) -- ++(-0.45,0) |- (e.west);
+  \end{tikzpicture}
+  \caption{Diagrama de flujo del programa principal en el modo~1 (control
+  desde el celular).}
+  \label{f:main}
+\end{figure}
+
+\subsection{Interrupción de la UART y decodificación de tramas}
+
+La aplicación Dabble~\cite{dabble} envía tramas de la forma
+\begin{center}
+  \texttt{FF 01 \textit{función} 01 02 \textit{botones} \textit{dato} 00}.
+\end{center}
+La
+rutina de interrupción (figura~\ref{f:isr}) recupera el desborde (OERR) y
+descarta los bytes con error de trama (FERR). Tres errores de trama seguidos
+indican que el HC-05 se reinició o se desconectó y activan el freno. Los
+bytes válidos pasan a una máquina de estados (figura~\ref{f:parser}) que
+reconoce las tramas de Dabble y también acepta letras sueltas (\texttt{F},
+\texttt{B}, \texttt{L}, \texttt{R}, \texttt{S} y \texttt{0}--\texttt{9}).
+Los bytes que no encajan suman indicios de velocidad equivocada; al
+acumular 24, la UART pasa a la siguiente velocidad de la lista (9600, 38400,
+19200, 57600 y 115200 baudios).
+
+\begin{figure}[!t]
+  \centering
+  \begin{tikzpicture}[flujo]
+    \node[term] (a) {Interrupción};
+    \node[dec, below=of a] (b) {¿RCIF = 1?};
+    \node[dec, below=of b] (c) {¿OERR = 1?};
+    \node[proc, right=5mm of c, text width=2.0cm, minimum width=2.2cm] (c2) {Reiniciar CREN; parser a LIBRE};
+    \node[dec, below=6mm of c] (d) {¿FERR = 1?};
+    \node[proc, right=5mm of d, text width=2.0cm, minimum width=2.2cm] (d2) {Descartar byte; errores seguidos + 1};
+    \node[dec, below=of d2, text width=1.3cm] (e) {¿Errores $\geq$ 3?};
+    \node[proc, below=of e, text width=2.0cm, minimum width=2.2cm] (f) {error\_trama = 1 (freno)};
+    \node[proc, below=of f, text width=2.0cm, minimum width=2.2cm] (g) {Indicio de baudios (peso 3)};
+    \node[proc, below=of d] (h) {Procesar\_Byte(RCREG)};
+    \node[term, below=24mm of h] (z) {Retorno};
+    \draw[fl] (a) -- (b);
+    \draw[fl] (b) -- node[no] {Sí} (c);
+    \draw[fl] (c) -- node[si] {Sí} (c2);
+    \draw[fl] (c2.south) |- ($(c.south)!0.5!(d.north)$);
+    \draw[fl] (c) -- node[no] {No} (d);
+    \draw[fl] (d) -- node[si] {Sí} (d2);
+    \draw[fl] (d2) -- (e);
+    \draw[fl] (e) -- node[no] {Sí} (f);
+    \draw[fl] (f) -- (g);
+    \draw[fl] (e.east) -- node[font=\tiny, above] {No} ++(0.35,0) |- (g.east);
+    \draw[fl] (d) -- node[no] {No} (h);
+    \draw[fl] (h) -- (z);
+    \draw[fl] (g.south) |- (z.east);
+    \draw[fl] (b.west) -- node[font=\tiny, above] {No} ++(-0.5,0) |- (z.west);
+  \end{tikzpicture}
+  \caption{Diagrama de flujo de la rutina de interrupción de la UART.}
+  \label{f:isr}
+\end{figure}
+
+\begin{figure}[!t]
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=1.6mm]},
+      est/.style={draw, rounded corners=3pt, fill=gray!12, minimum width=1.05cm, minimum height=5mm, inner sep=2pt, align=center},
+      fl/.style={->, line width=0.5pt},
+      lab/.style={font=\tiny}]
+    \node[est] (libre) at (0,0)      {LIBRE};
+    \node[est] (mod)   at (1.95,0)   {MÓDULO};
+    \node[est] (fun)   at (3.9,0)    {FUNCIÓN};
+    \node[est] (nar)   at (5.85,0)   {N.\ ARGS};
+    \node[est] (fin)   at (0,-1.7)   {FIN};
+    \node[est] (dat)   at (2.9,-1.7) {DATOS};
+    \node[est] (lar)   at (5.85,-1.7){LARGO};
+    \draw[fl] (libre) -- node[lab, above] {0xFF} (mod);
+    \draw[fl] (mod) -- (fun);
+    \draw[fl] (fun) -- (nar);
+    \draw[fl] (nar) -- node[lab, right] {$n>0$} (lar);
+    \draw[fl] ($(lar.west)+(0,0.1)$) -- node[lab, above] {$\ell>0$} ($(dat.east)+(0,0.1)$);
+    \draw[fl] ($(dat.east)+(0,-0.1)$) -- node[lab, below] {otro arg.} ($(lar.west)+(0,-0.1)$);
+    \draw[fl] (dat) -- node[lab, above] {último dato} (fin);
+    \draw[fl] (fin) -- node[lab, left, align=right] {0x00:\\trama\\válida} (libre);
+    \draw[fl] (nar.east) -- ++(0.35,0) |- node[lab, below, pos=0.75] {$n=0$} ($(fin.south)+(0,-0.45)$) -- (fin.south);
+    \draw[fl] ($(libre.north)+(0.15,0)$) .. controls +(0.2,0.6) and +(-0.2,0.6) .. ($(libre.north)+(-0.15,0)$)
+       node[lab, above, yshift=0.45cm, xshift=0.1cm] {otro byte: letra};
+  \end{tikzpicture}
+  \caption{Máquina de estados de \texttt{Procesar\_Byte()}, que decodifica las
+  tramas de Dabble. $n$: número de argumentos; $\ell$: largo del argumento.}
+  \label{f:parser}
+\end{figure}
+
+\subsection{Ejecución de las órdenes del mando}
+
+La figura~\ref{f:gamepad} muestra cómo se convierte una trama en la velocidad
+de cada rueda. Los botones $\triangle$ y $\times$ suben y bajan la velocidad
+máxima un \SI{10}{\percent}, $\bigcirc$ la lleva al \SI{100}{\percent} y
+$\square$ frena. La cruceta da velocidades fijas y el joystick envía un ángulo
+$\theta$ en múltiplos de \ang{15} y un radio $r$ de 0 a 7, que se convierten
+con una tabla de senos y una mezcla diferencial:
+\begin{gather}
+  v_y = \frac{r\,\sin\theta}{7},\qquad v_x = \frac{r\cos\theta}{7},\\
+  v_{izq} = v_y + v_x,\qquad v_{der} = v_y - v_x.
+\end{gather}
+Luego \texttt{Aplicar\_Ruedas()} escala cada valor por la velocidad máxima y
+suma un mínimo de 300 para vencer la zona muerta del motor:
+$DC = 300 + 0.7\,v$. En la tarjeta se usan giros en pivote
+(\texttt{GIRO\_SOBRE\_EJE = 0}): si las dos ruedas piden sentidos opuestos, la
+que va hacia atrás se detiene.
+
+\begin{figure}[!t]
+  \centering
+  \begin{tikzpicture}[flujo]
+    \node[term] (a) {Comando\_Gamepad()};
+    \node[proc, below=of a] (b) {Botones nuevos: $\triangle$ +10\,\%, $\times$ $-$10\,\%, $\bigcirc$ 100\,\%};
+    \node[dec, below=of b] (c) {¿$\square$ presionado?};
+    \node[proc, right=5mm of c, text width=1.8cm, minimum width=2.0cm] (c2) {Objetivo = 0 (freno)};
+    \node[dec, below=of c] (d) {¿Cruceta?};
+    \node[proc, right=5mm of d, text width=1.8cm, minimum width=2.0cm] (d2) {Recto, curva o giro según la flecha};
+    \node[dec, below=of d] (e) {¿Joystick?};
+    \node[proc, right=5mm of e, text width=1.8cm, minimum width=2.0cm] (e2) {Tabla de senos y mezcla diferencial};
+    \node[dec, below=8mm of e] (f) {¿Sentidos opuestos?};
+    \node[proc, right=5mm of f, text width=1.8cm, minimum width=2.0cm] (f2) {Rueda negativa a 0 (pivote)};
+    \node[dec, below=6mm of f] (g) {¿Una rueda invierte?};
+    \node[proc, right=5mm of g, text width=1.8cm, minimum width=2.0cm] (g2) {Freno \SI{30}{\milli\second}};
+    \node[proc, below=6mm of g] (h) {Escalar por vel\_max, zona muerta y escribir PWM y dirección};
+    \node[term, below=of h] (z) {Fin};
+    \draw[fl] (a) -- (b); \draw[fl] (b) -- (c);
+    \draw[fl] (c) -- node[si] {Sí} (c2);
+    \draw[fl] (c) -- node[no] {No} (d);
+    \draw[fl] (d) -- node[si] {Sí} (d2);
+    \draw[fl] (d) -- node[no] {No} (e);
+    \draw[fl] (e) -- node[si] {Sí} (e2);
+    \draw[fl] (e.west) -- node[font=\tiny, above] {No} ++(-0.5,0) |- (z.west);
+    \coordinate (m) at ($(e.south)!0.5!(f.north)$);
+    \draw (c2.east) -- ++(0.2,0) coordinate (r1);
+    \draw (d2.east) -- (d2.east -| r1);
+    \draw (e2.east) -- (e2.east -| r1);
+    \draw[fl] (r1) |- (m) -- (f.north);
+    \draw[fl] (f) -- node[si] {Sí} (f2);
+    \draw[fl] (f2.south) |- ($(f.south)!0.5!(g.north)$);
+    \draw[fl] (f) -- node[no] {No} (g);
+    \draw[fl] (g) -- node[si] {Sí} (g2);
+    \draw[fl] (g2.south) |- ($(g.south)!0.5!(h.north)$);
+    \draw[fl] (g) -- node[no] {No} (h);
+    \draw[fl] (h) -- (z);
+  \end{tikzpicture}
+  \caption{Diagrama de flujo de \texttt{Comando\_Gamepad()} y
+  \texttt{Aplicar\_Ruedas()}.}
+  \label{f:gamepad}
+\end{figure}
 
 % ============================================================================
 \section{Simulación en Proteus}
-\label{c:sim}
+\label{s:sim}
 
-Antes de montar el circuito, el firmware se probó en Proteus
-(\texttt{robot\_diferencial.pdsprj}, en la carpeta \texttt{simulacion} del repositorio). Como
-Proteus no trae el DRV8833, se reemplazó por un L293D, que tiene la misma tabla
-de verdad por canal: el PWM de CCP1 (RC2) y CCP2 (RC1) y las líneas de
-dirección RD0 y RD1 llegan a las entradas IN1--IN4, y EN1 y EN2 quedan a
-\SI{5}{\volt}. El HC-05 se reemplazó por una terminal virtual conectada a
-RC6/TX y RC7/RX, desde la que se envían los comandos con letras
-(\texttt{F}, \texttt{B}, \texttt{L}, \texttt{R}, \texttt{S}), y un osciloscopio
-de cuatro canales mide las señales que van al driver.
+Antes del montaje, el firmware se probó en Proteus
+(figura~\ref{f:proteus}). Como Proteus no trae el DRV8833, se reemplazó por un
+L293D, que tiene la misma tabla de verdad por canal; EN1 y EN2 quedan a
+\SI{5}{\volt}. El HC-05 se reemplazó por una terminal virtual conectada a RC6
+y RC7, desde la que se envían las letras de comando, y un osciloscopio de
+cuatro canales mide las señales que van al driver. Con el comando \texttt{F}
+los dos motores giran y el osciloscopio muestra las dos señales PWM al mismo
+tiempo (figura~\ref{f:proteus-sim}), lo que validó la lógica del firmware
+antes de grabar la tarjeta.
 
-\begin{figure}[H]
+
+
+\begin{figure}[!t]
   \centering
-  \includegraphics[width=0.92\textwidth]{proteus-esquematico.png}
-  \caption{Esquemático en Proteus: PIC16F877A, L293D en lugar del DRV8833,
-  dos motores DC, terminal virtual (HC-05) y osciloscopio.}
-  \label{c:fig:proteus-esq}
+  \includegraphics[width=\columnwidth]{proteus-simulacion.png}
+  \caption{Simulación con el comando \texttt{F}: los motores giran y el
+  osciloscopio muestra las señales PWM de los dos canales.}
+  \label{f:proteus-sim}
 \end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.92\textwidth]{proteus-simulacion.png}
-  \caption{Simulación en marcha: con el comando \texttt{F} enviado desde la
-  terminal virtual, los dos motores giran y el osciloscopio muestra las
-  señales PWM de los dos canales.}
-  \label{c:fig:proteus-sim}
-\end{figure}
-
-La simulación confirmó que los dos canales PWM se generan a la vez y que cada
-comando de la terminal produce el movimiento esperado en los motores, antes de
-pasar a la tarjeta física.
 
 % ============================================================================
-\section{Demostración en hardware}
-\label{c:demo}
+\section{Resultados}
+\label{s:res}
 
-\begin{table}[H]
+Antes del código de los motores se grabó un programa que enciende los tres
+LEDs en secuencia (\texttt{prueba\_leds.c}) para comprobar el PIC, el cristal
+y la grabación con el PICkit~3. Luego se probaron las maniobras con el
+celular; la tabla~\ref{t:res} resume los resultados. El carro completó el
+recorrido de la competencia del curso y obtuvo el \textbf{segundo lugar}
+(video: \url{https://youtube.com/shorts/f3ZtwNBpTU8}). No se registraron
+mediciones del PWM con osciloscopio en el hardware; la frecuencia se verificó
+en la simulación.
+
+\begin{table}[!t]
+  \caption{Resultados en la tarjeta}
+  \label{t:res}
   \centering
-  \caption{Resultados en la tarjeta.}
-  \small
-  \begin{tabularx}{\textwidth}{@{}l L c@{}}
+  \footnotesize
+  \begin{tabularx}{\columnwidth}{@{}l L c@{}}
     \toprule
     \textbf{Prueba} & \textbf{Observación} & \textbf{Resultado} \\
     \midrule
-    Prueba del PIC con LEDs & Secuencia de LED1, LED2 y LED3 con \texttt{prueba\_leds.c}. & Correcto \\
-    Avance y reversa & Las dos ruedas giran en el sentido pedido. & Correcto \\
-    Giro izquierda y derecha & Giro en pivote: una rueda avanza y la otra queda frenada. & Correcto \\
-    Control de velocidad & Se sube y baja desde el mando (pasos de \SI{10}{\percent}). & Correcto \\
-    Control desde el celular & Cruceta, joystick y botones de la app Dabble por Bluetooth. & Correcto \\
-    Competencia del curso & Recorrido completo manejado desde el celular. & 2.º lugar \\
+    LEDs & Secuencia LED1, LED2, LED3 & Correcto \\
+    Avance y reversa & Las dos ruedas en el sentido pedido & Correcto \\
+    Giros & En pivote: una rueda avanza y la otra frena & Correcto \\
+    Velocidad & Pasos de \SI{10}{\percent} desde el mando & Correcto \\
+    Celular & Cruceta, joystick y botones de Dabble & Correcto \\
+    Competencia & Recorrido completo desde el celular & 2.º lugar \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-Antes de cargar el código de los motores se grabó un programa de prueba
-(\texttt{prueba\_leds.c}, configuración \texttt{leds}) que enciende los tres
-LEDs de la tarjeta en secuencia. Así se comprobó que el PIC, el cristal de
-\SI{20}{\mega\hertz} y la grabación con el PICkit~3 funcionaban, y cualquier
-falla posterior se podía buscar en el driver o en los motores.
-
-\noindent\textbf{Problemas encontrados y solución:}
-\begin{enumerate}
-  \item \emph{Motores sin movimiento con el código de la guía:} EEP no
-        conectado en la tarjeta $\rightarrow$ EEP a \SI{5}{\volt}.
-  \item \emph{Comandos del celular mal interpretados:} el HC-05 no trabajaba a
-        9600~baudios $\rightarrow$ detección automática de la velocidad.
-  \item \emph{Reinicios y desconexiones al arrancar el motor:} la pila de
-        \SI{9}{\volt} no da la corriente $\rightarrow$ baterías 18650 y freno
-        automático por pérdida de señal.
-  \item \emph{Falla al grabar una tarjeta:} PIC dañado por el ICSP conectado
-        al revés $\rightarrow$ se trabajó con otra tarjeta.
-  \item \emph{Corto entre VDD y GND en la primera tarjeta:} se soldaron
-        pines por la cara inferior, que es un plano de cobre conectado a
-        tierra; el estaño unió un pad con ese plano y al energizar la tarjeta
-        VDD quedó en corto con GND (figura~\ref{c:fig:corto})
-        $\rightarrow$ se cambió de tarjeta y en la cara inferior solo se
-        soldaron los pines de GND.
-  \item \emph{Motor izquierdo siempre encendido:} IN1 en corto con RD2 y RD3
-        $\rightarrow$ esos pines como entradas y se retiró el puente de estaño.
-  \item \emph{Giros con zumbido y sin movimiento:} al escribir un pin de
-        dirección cambiaba el otro (lectura-modificación-escritura del
-        puerto~D) $\rightarrow$ registro sombra y giros en pivote.
-\end{enumerate}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[height=3.9cm]{corto-cara-inferior.jpg}
-  \caption{Cara inferior de la primera tarjeta: el pad cuadrado se soldó por
-  este lado y el estaño quedó unido al plano de cobre de tierra que lo rodea,
-  lo que produjo el corto entre VDD y GND.}
-  \label{c:fig:corto}
-\end{figure}
-
 % ============================================================================
-\section{Instrucciones de uso}
+\section{Problemas encontrados y solución}
+\label{s:prob}
 
-\noindent\textbf{Compilar.} En MPLAB X (v6.20, la última compatible con el
-PICkit~3) con XC8, el proyecto tiene tres configuraciones: \texttt{try1}
-(código de la guía), \texttt{completo} (código propio) y \texttt{leds} (prueba
-de montaje). Se elige en el desplegable de la barra y se compila con
-\emph{Clean and Build}; el archivo queda en
-\texttt{dist/<configuración>/production/}. En el código propio,
-\texttt{MODO\_BLUETOOTH = 0} ejecuta la secuencia del taller y
-\texttt{MODO\_BLUETOOTH = 1} activa el control por celular.
+La tabla~\ref{t:prob} resume las fallas, en el orden en que aparecieron.
+Ninguna era un error de la lógica del programa: se encontraron midiendo con el
+multímetro, con programas de prueba que activan un pin a la vez y comparando
+con las hojas de datos. La figura~\ref{f:corto} muestra el origen del corto
+de la primera tarjeta.
 
-\noindent\textbf{Grabar.} En la aplicación \emph{PICkit~3 Programmer}: conectar
-el ICSP con la flecha hacia el pin~1, activar \emph{Manual Device Select},
-elegir \emph{Midrange/Standard} y PIC16F877A, \emph{Import Hex}, \emph{Write}.
-Con la batería conectada, \emph{VDD On} debe estar desactivado. Desmarcar
-\emph{/MCLR} para que el programa arranque.
-
-\begin{figure}[H]
+\begin{table}[!t]
+  \caption{Fallas y solución}
+  \label{t:prob}
   \centering
-  \begin{subfigure}[b]{0.3\textwidth}
-    \centering
-    \includegraphics[height=5.2cm]{montaje-chasis.jpg}
-    \caption{Armado del chasis y soldadura.}
-  \end{subfigure}\hfill
-  \begin{subfigure}[b]{0.66\textwidth}
-    \centering
-    \includegraphics[height=5.2cm]{programacion-pickit3.jpg}
-    \caption{Grabación de la tarjeta con el PICkit~3.}
-  \end{subfigure}
-  \caption{Proceso de montaje y programación.}
-  \label{c:fig:proceso}
+  \footnotesize
+  \begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}p{2.6cm} L@{}}
+    \toprule
+    \textbf{Falla} & \textbf{Causa y solución} \\
+    \midrule
+    Motores sin movimiento & EEP sin conectar; EEP directo a \SI{5}{\volt}. \\
+    Comandos mal leídos & HC-05 a otra velocidad; detección automática de baudios. \\
+    Reinicios al arrancar & Pila de \SI{9}{\volt} insuficiente; baterías 18650 y freno por pérdida de señal. \\
+    No graba una tarjeta & ICSP conectado al revés dañó el PIC; se usó otra tarjeta. \\
+    VDD en corto con GND & Se soldó por la cara inferior, que es plano de tierra; se cambió de tarjeta y por esa cara solo se sueldan los pines de GND. \\
+    Motor izquierdo siempre encendido & Puente de estaño entre IN1 y RD2/RD3; esos pines como entradas y se retiró el puente. \\
+    Giros con zumbido & Escritura bit a bit del puerto~D; registro sombra y giros en pivote. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=0.42\columnwidth]{corto-cara-inferior.jpg}
+  \caption{Cara inferior de la primera tarjeta: el pad cuadrado se soldó por
+  este lado y el estaño quedó unido al plano de tierra, lo que dejó a VDD en
+  corto con GND.}
+  \label{f:corto}
 \end{figure}
-
-\noindent\textbf{Simular.} Abrir \texttt{simulacion/\allowbreak robot\_diferencial.pdsprj}
-en Proteus, cargar en el PIC el archivo \texttt{.hex} compilado y configurar su
-reloj a \SI{20}{\mega\hertz} (sección~\ref{c:sim}). En la terminal virtual se
-escriben los comandos (\texttt{F}, \texttt{B}, \texttt{L}, \texttt{R},
-\texttt{S}); el osciloscopio debe mostrar un periodo de
-\SI{800}{\micro\second}. Las RPM positivas indican avance y las negativas,
-reversa.
-
-\noindent\textbf{Manejar desde el celular.} Vincular el HC-05 en los ajustes de
-Bluetooth de un celular Android (clave 1234 o 0000). En la app \emph{Dabble}
-(STEMpedia), con la ubicación activa, conectar el HC-05 y abrir
-\emph{Gamepad}. Presionar varios botones hasta que el LED1 cambie con cada
-pulsación. La cruceta mueve el carro, el joystick lo maneja de forma
-proporcional, $\triangle$ y $\times$ suben y bajan la velocidad un
-\SI{10}{\percent}, $\bigcirc$ la pone al \SI{100}{\percent} y $\square$ frena
-mientras se mantiene. El carro arranca al \SI{80}{\percent}. El HC-05 no funciona con iPhone; para iPhone se necesita un módulo BLE
-(HM-10).
 
 % ============================================================================
 \section{Conclusiones}
@@ -406,20 +518,64 @@ mientras se mantiene. El carro arranca al \SI{80}{\percent}. El HC-05 no funcion
 \begin{itemize}
   \item Con \SI{20}{\mega\hertz} y prescaler 1:16 la frecuencia de
         \SI{1.2}{\kilo\hertz} no es alcanzable; $PR2 = 249$ da
-        \SI{1250}{\hertz} y una escala exacta de 1000 pasos de 0.1\,\%.
-  \item Una sola línea de dirección y un PWM por motor bastan para controlar
+        \SI{1250}{\hertz} y una escala exacta de 1000 pasos.
+  \item Un PWM y una línea de dirección por motor bastan para controlar
         velocidad, sentido y freno dinámico con el DRV8833.
-  \item Las fallas principales fueron de hardware (nSLEEP sin conexión y un
-        corto de soldadura en IN1). Se encontraron midiendo con el multímetro,
-        con programas de prueba por pin y comparando con la hoja de datos.
-  \item El carro cumplió todos los movimientos y obtuvo el segundo lugar en la
-        competencia.
-  \item Por mejorar: movimientos más suaves (hoy son bruscos), girar mientras
-        avanza como un carro, reemplazar los retardos bloqueantes por
-        temporizadores, y mejorar el diseño mecánico y las soldaduras.
+  \item Separar la recepción (interrupción) de la ejecución (lazo
+        principal) y decodificar las tramas con una máquina de estados dio un
+        control remoto confiable, con freno ante la pérdida de señal.
+  \item Probar primero el PIC con LEDs y luego cada etapa por separado
+        permitió ubicar cada falla; las principales fueron de hardware.
+  \item Por mejorar: movimientos más suaves, girar mientras avanza,
+        temporizadores en lugar de retardos bloqueantes, y mejor diseño
+        mecánico y soldaduras.
 \end{itemize}
 
-\noindent El código fuente, el informe técnico completo y las instrucciones
-están en \url{https://github.com/Brahiam18/robot-diferencial-pic16f877a}.
+El código fuente, la simulación y el informe técnico completo están en
+\url{https://github.com/Brahiam18/robot-diferencial-pic16f877a}.
+
+% ============================================================================
+\begin{thebibliography}{6}
+
+\bibitem{guia}
+Universidad de Ibagué, ``Taller Práctico II: Control dual de motores y
+robótica móvil diferencial,'' guía de laboratorio, Microcontroladores y
+Sistemas Embebidos, Ibagué, Colombia, 2026.
+
+\bibitem{pic16f877a}
+Microchip Technology Inc., ``PIC16F87XA data sheet: 28/40/44-pin enhanced
+flash microcontrollers,'' DS39582B, Chandler, AZ, USA, 2003.
+
+\bibitem{drv8833}
+Texas Instruments, ``DRV8833 dual H-bridge motor driver,'' SLVSAR1E, Dallas,
+TX, USA, 2015.
+
+\bibitem{xc8}
+Microchip Technology Inc., ``MPLAB XC8 C compiler user's guide for PIC MCU,''
+Chandler, AZ, USA.
+
+\bibitem{dabble}
+STEMpedia, ``Dabble: library for Arduino and ESP32,'' GitHub. [En línea].
+Disponible: \url{https://github.com/STEMpedia/Dabble}
+
+\bibitem{hc05}
+``HC-05 Bluetooth serial module,'' hoja de datos del fabricante.
+
+\end{thebibliography}
+
+\appendices
+\section{Instrucciones de uso}
+
+\textit{Compilar:} en MPLAB X v6.20 con XC8, elegir la configuración
+\texttt{completo} y ejecutar \emph{Clean and Build}; el archivo queda en
+\texttt{dist/completo/production/}.
+\textit{Grabar:} en \emph{PICkit~3 Programmer}, conectar el ICSP con la flecha
+hacia el pin~1, \emph{Manual Device Select}, PIC16F877A, \emph{Import Hex} y
+\emph{Write}; con la batería conectada, \emph{VDD On} desactivado.
+\textit{Simular:} abrir \texttt{simulacion/robot\_diferencial.pdsprj},
+cargar el \texttt{.hex} y poner el reloj del PIC en \SI{20}{\mega\hertz}.
+\textit{Manejar:} vincular el HC-05 en Android (clave 1234 o 0000), conectarlo
+en Dabble y abrir \emph{Gamepad}. El HC-05 no funciona con iPhone; se
+necesitaría un módulo BLE como el HM-10~\cite{hc05}.
 
 \end{document}
