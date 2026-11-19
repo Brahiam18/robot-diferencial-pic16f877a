@@ -85,19 +85,35 @@ responden a las fallas por alimentación observadas en la tarjeta
     \midrule
     Adelante  & Avance  & Avance  & Traslación hacia adelante \\
     Atrás     & Reversa & Reversa & Traslación hacia atrás \\
-    Izquierda & Reversa & Avance  & Rotación antihoraria sobre su eje \\
-    Derecha   & Avance  & Reversa & Rotación horaria sobre su eje \\
+    Izquierda (eje)    & Reversa & Avance  & Rotación antihoraria sobre su eje \\
+    Derecha (eje)      & Avance  & Reversa & Rotación horaria sobre su eje \\
+    Izquierda (pivote) & Freno   & Avance  & Giro alrededor de la rueda izquierda \\
+    Derecha (pivote)   & Avance  & Freno   & Giro alrededor de la rueda derecha \\
     Curva     & Avance lento & Avance & Arco hacia el lado de la rueda lenta \\
     Parar     & Freno   & Freno   & Detención con freno dinámico \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Se usa giro sobre el propio eje (ruedas en sentidos opuestos) en lugar de
-frenar una sola rueda: el radio de giro es cero, la maniobra es simétrica y la
-plataforma puede reorientarse en espacios reducidos. El giro con pivote (una
-rueda frenada y la otra en avance) se obtiene con
-\texttt{Motor\_X(0, 0)}, que deja $x$IN1 = $x$IN2 = 1.
+El firmware admite los dos tipos de giro con la directiva
+\texttt{GIRO\_SOBRE\_EJE}. El giro sobre el propio eje (ruedas en sentidos
+opuestos, valor 1) tiene radio cero y permite reorientarse en espacios
+reducidos. En la tarjeta final se usa el giro en pivote (valor 0): una rueda
+avanza y la otra queda frenada con sus dos entradas iguales, de modo que las
+dos líneas de dirección (RD0 y RD1) nunca están en estados distintos. Se eligió
+así porque, mientras existió el puente de estaño en IN1 y antes del registro
+sombra, los giros con ruedas opuestas solo hacían zumbar los motores
+(sección~\ref{sec:depuracion}). Con \texttt{GIRO\_SOBRE\_EJE = 0}, si el
+joystick pide velocidades de signo contrario, la rueda negativa se detiene.
+
+\noindent\textbf{Escritura del puerto D con registro sombra.} El PIC16F877A no
+tiene registro LAT: una instrucción que cambia un solo bit lee el puerto
+completo, modifica el bit y lo vuelve a escribir. Si otro pin del puerto está
+cargado por el circuito, se lee un valor distinto al escrito y ese pin cambia
+sin que el código lo pida. Las líneas de dirección se escriben a través de una
+copia en memoria (\texttt{sombra\_d}) que siempre se escribe completa en
+PORTD. Además, con \texttt{TARJETA\_CURSO = 1}, RD2 y RD3 quedan como entradas
+para no forzar la pista de IN1.
 
 \subsection{Modo 0: secuencia de validación del taller}
 
@@ -161,7 +177,7 @@ seguir la estructura de la trama campo por campo.
     \textbf{Entrada} & \textbf{Acción} \\
     \midrule
     Cruceta $\uparrow$ $\downarrow$ & Adelante / atrás \\
-    Cruceta $\leftarrow$ $\rightarrow$ & Giro sobre su eje \\
+    Cruceta $\leftarrow$ $\rightarrow$ & Giro en pivote (sobre su eje con \texttt{GIRO\_SOBRE\_EJE = 1}) \\
     Cruceta en diagonal & Avance o reversa con curva (rueda interior al 40\,\%) \\
     Joystick / acelerómetro & Velocidad y giro proporcionales (mezcla diferencial) \\
     $\triangle$ / $\times$ / $\bigcirc$ & +10\,\% / $-$10\,\% / 100\,\% de velocidad (una vez por pulsación) \\

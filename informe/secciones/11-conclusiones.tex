@@ -18,12 +18,17 @@
   \item Aplicar PWM directo en avance e invertido en reversa con el DRV8833
         permite controlar velocidad y sentido con solo dos líneas por motor, y
         el freno dinámico detiene la plataforma más rápido que la parada libre.
-  \item La causa de que los motores no respondieran en la tarjeta fue de
-        hardware: el pin de habilitación nSLEEP no está ruteado y una
-        resistencia de \SI{10}{\kilo\ohm} lo dejaba en \SI{1.41}{\volt}, por
-        debajo del umbral de \SI{2.5}{\volt}. Medir en el punto correcto y
-        contrastar con la hoja de datos fue más efectivo que modificar el
-        código.
+  \item El carro cumplió todas las maniobras en la tarjeta del curso y obtuvo
+        el segundo lugar en la competencia.
+  \item Las fallas principales fueron de hardware: el pin de habilitación
+        nSLEEP no está ruteado (y una resistencia de \SI{10}{\kilo\ohm} lo
+        dejaba en \SI{1.41}{\volt}, por debajo del umbral de
+        \SI{2.5}{\volt}), un corto de soldadura entre VDD y GND y otro entre
+        IN1 y RD2/RD3. Medir en el punto correcto, usar programas de prueba
+        por pin y contrastar con la hoja de datos fue más efectivo que
+        modificar el código.
+  \item Probar primero el PIC solo con LEDs y luego cada etapa por separado
+        permitió saber en cada momento qué parte del sistema fallaba.
   \item Decodificar el protocolo binario de Dabble con una máquina de estados
         en la interrupción permitió un control tipo gamepad con joystick
         proporcional, sin cambiar el hardware y manteniendo la compatibilidad
@@ -50,6 +55,14 @@ simulación en Proteus y validación en hardware.
 \subsection{Trabajo futuro}
 
 \begin{itemize}
+  \item Movimientos más suaves: rampas de aceleración también en el control
+        remoto, en lugar de cambios de velocidad en escalón.
+  \item Dirección tipo carro: girar mientras avanza, con una rueda más lenta
+        que la otra, en lugar de girar en pivote.
+  \item Reemplazar los retardos bloqueantes (\texttt{\_\_delay\_ms}) por
+        temporizadores, para que el control sea más dinámico.
+  \item Mejorar el diseño mecánico (contrapesos) y la calidad de las
+        soldaduras.
   \item Rutear EEP a RD2 en una nueva revisión de la tarjeta, para habilitar
         el driver desde el firmware.
   \item Lazo cerrado de velocidad con encoders en las ruedas y control PI,

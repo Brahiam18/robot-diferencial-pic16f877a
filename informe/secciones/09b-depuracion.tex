@@ -49,9 +49,27 @@ ocurrió.
     10 & Con EEP conectado a \SI{5}{\volt} mediante \SI{10}{\kilo\ohm}, el motor responde a ratos. &
       EEP mide \SI{1.41}{\volt}, en la zona no definida de nSLEEP, y a veces \SI{5}{\volt}. &
       Divisor con el \emph{pull-down} del módulo y contacto intermitente. Cable directo a \SI{5}{\volt}, sin continuidad con OUT1. \\
+    11 & Al energizar la primera tarjeta, VDD queda en corto con GND. &
+      Se habían soldado pines por la cara inferior, que es un plano de cobre conectado a tierra (figura~\ref{fig:corto}). &
+      El estaño unió un pad con el plano. Se cambió de tarjeta y por esa cara solo se sueldan los pines de GND. \\
+    12 & Con EEP a \SI{5}{\volt}, el motor izquierdo queda siempre encendido; OUT2 fijo en \SI{7}{\volt}. &
+      Un programa que activa un pin a la vez mostró que IN1 sube con RD2 y RD3; continuidad de IN1 con las patas 40 y 41. &
+      Puente de estaño entre IN1 y RD2/RD3. RD2 y RD3 como entradas (\texttt{TARJETA\_CURSO = 1}) y se retiró el puente. \\
+    13 & Avance y reversa funcionan, pero en los giros los motores solo zumban. &
+      Al cambiar una línea de dirección, la otra también cambiaba. &
+      Lectura-modificación-escritura del puerto~D: se escribe con un registro sombra y los giros pasan a pivote (\texttt{GIRO\_SOBRE\_EJE = 0}). \\
     \bottomrule
   \end{tabularx}
 \end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[height=5cm]{figuras/corto-cara-inferior.jpg}
+  \caption{Cara inferior de la primera tarjeta: el pad cuadrado se soldó por
+  este lado y el estaño quedó unido al plano de cobre de tierra que lo rodea,
+  lo que produjo el corto entre VDD y GND.}
+  \label{fig:corto}
+\end{figure}
 
 \subsection{Lecciones}
 
@@ -71,4 +89,11 @@ ocurrió.
         que ajustarlo a las condiciones reales.
   \item \textbf{Verificar la orientación del programador antes de cualquier
         clic.} La aplicación aplica voltaje apenas detecta el chip.
+  \item \textbf{Revisar la tarjeta antes de energizarla.} Medir continuidad
+        entre VDD y GND y entre pines vecinos detecta cortos de soldadura
+        antes de que dañen algo; por la cara de tierra solo se sueldan los
+        pines de GND.
+  \item \textbf{En el PIC16, escribir el puerto completo.} Sin registro LAT,
+        cambiar un bit puede alterar los demás; una copia en memoria del
+        puerto evita ese efecto.
 \end{itemize}

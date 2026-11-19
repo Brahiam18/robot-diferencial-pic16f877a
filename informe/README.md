@@ -5,10 +5,10 @@ Informes del **Taller Práctico II: Control dual de motores y robótica móvil d
 | Archivo | Qué es |
 | --- | --- |
 | `main.tex` | **Informe técnico completo** (portafolio): arquitectura, potencia, cálculos, firmware, protocolo Dabble, programación, depuración en hardware y anexos de código |
-| `informe_docente.tex` | **Informe corto para el docente** (4 páginas): montaje, cálculos de la guía, código, demostración e instrucciones de uso |
+| `informe_docente.tex` | **Informe corto para el docente** (7 páginas): montaje, cálculos de la guía, código, simulación, demostración e instrucciones de uso |
 
-> Estado: **borrador (v0.2)**. El contenido técnico está completo; faltan fotografías,
-> capturas de simulación y mediciones. Todo lo pendiente aparece en rojo en el PDF.
+> Estado: **versión final (1.0)**, con fotografías del montaje, capturas de Proteus,
+> resultados de las pruebas y el resultado de la competencia (segundo lugar).
 
 ## Estructura
 
@@ -62,11 +62,7 @@ Paquetes usados: `babel` (español), `lmodern`, `siunitx`, `booktabs`, `tabularx
 
 - Guardar siempre los archivos en **UTF-8** (el texto lleva tildes y eñes).
 
-## Pendiente para la versión final
+## Posibles mejoras al informe
 
-- [ ] Nombres de los integrantes y del docente
-- [ ] Fotografía de la tarjeta montada
-- [ ] Capturas de Proteus: esquemático, osciloscopio y terminal virtual
-- [ ] Mediciones de la sección de pruebas (Proteus y hardware) y resultado de cada prueba
-- [ ] Demostración con EEP a 5 V y baterías 18650
+- [ ] Mediciones cuantitativas del PWM con osciloscopio en el hardware
 - [ ] Logo de la universidad en la portada (opcional)

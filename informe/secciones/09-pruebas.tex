@@ -5,13 +5,13 @@
 \label{sec:pruebas}
 
 Las pruebas se hicieron por etapas sobre la tarjeta, de lo más simple a lo más
-complejo, para aislar cada falla. La tabla~\ref{tab:resultados} resume las ya
-realizadas; las mediciones eléctricas y la demostración con alimentación
-definitiva quedan para completar.
-% Para llenar: reemplazar cada \pendiente{...} por el valor medido y
-% "Pendiente" por "Cumple" o "No cumple".
+complejo, para aislar cada falla. Primero se grabó un programa que solo
+enciende los LEDs en secuencia (\texttt{prueba\_leds.c}); con el PIC, el
+cristal y la grabación comprobados, cualquier falla posterior se podía buscar
+en el driver, los motores, la alimentación o el enlace Bluetooth. La
+tabla~\ref{tab:resultados} resume las pruebas en el orden en que se hicieron.
 
-\subsection{Pruebas funcionales realizadas en la tarjeta}
+\subsection{Pruebas por etapas en la tarjeta}
 
 \begin{table}[H]
   \centering
@@ -22,8 +22,8 @@ definitiva quedan para completar.
     \toprule
     \textbf{Prueba} & \textbf{Observación} & \textbf{Resultado} \\
     \midrule
-    Grabación (tarjeta 1) & El PIC se identifica pero la escritura falla en 0x0000, tras la conexión invertida del ICSP. & No cumple \\
-    Grabación (tarjeta 2) & \emph{Programming Successful} con el mismo PICkit y el mismo \texttt{.hex}. & Cumple \\
+    Grabación (tarjeta dañada) & El PIC se identifica pero la escritura falla en 0x0000, tras la conexión invertida del ICSP. & No cumple \\
+    Grabación (otra tarjeta) & \emph{Programming Successful} con el mismo PICkit y el mismo \texttt{.hex}. & Cumple \\
     Prueba de LEDs (\texttt{prueba\_leds.c}) & Secuencia LED1 $\rightarrow$ LED2 $\rightarrow$ LED3 correcta: PIC, cristal y grabación verificados. & Cumple \\
     Código del docente con motores & Sin movimiento: EEP en \SI{0.14}{\volt}, driver dormido. & No cumple \\
     Enlace Bluetooth (primera versión) & Solo cambiaba LED2: bytes alterados por velocidad equivocada del HC-05. & No cumple \\
@@ -31,36 +31,22 @@ definitiva quedan para completar.
     Comandos sin motores (alimentación del PICkit) & LED3 se enciende con cada dirección y se apaga al soltar; $\triangle$, $\bigcirc$ y $\times$ solo cambian LED1; sin reinicios. & Cumple \\
     Motor con pila de \SI{9}{\volt} & Al arrancar, el HC-05 se desconecta o el PIC se reinicia (tres parpadeos); antes del freno de seguridad, el motor quedaba girando. & No cumple \\
     Motor con EEP en \SI{1.4}{\volt} & Respuesta intermitente; EEP alterna entre \SI{1.4}{\volt} y \SI{5}{\volt}. & No cumple \\
-    Motor con EEP a \SI{5}{\volt} y batería 18650 & \pendiente{Por realizar} & Pendiente \\
+    EEP a \SI{5}{\volt} con cable directo & El motor izquierdo queda siempre encendido (OUT2 fijo en \SI{7}{\volt}): IN1 en corto con RD2 y RD3. & No cumple \\
+    RD2 y RD3 como entradas, registro sombra & Avance y reversa correctos en los dos motores; los giros con ruedas opuestas solo zumban. & Parcial \\
+    Giros en pivote, corto de IN1 retirado & Avance, reversa, giros y velocidad responden desde el celular. & Cumple \\
     \bottomrule
   \end{tabularx}
 \end{table}
 
-\subsection{Mediciones de PWM (cristal de 20 MHz)}
+\subsection{Verificación del PWM}
 
-\begin{table}[H]
-  \centering
-  \caption{Mediciones eléctricas esperadas y obtenidas.}
-  \label{tab:mediciones}
-  \small
-  \begin{tabularx}{\textwidth}{@{}L >{\raggedright\arraybackslash}p{3.0cm} c c c@{}}
-    \toprule
-    \textbf{Prueba} & \textbf{Esperado} & \textbf{Proteus} & \textbf{Hardware} & \textbf{Resultado} \\
-    \midrule
-    Frecuencia PWM en RC2               & \SI{1250}{\hertz}                 & \pendiente{} & \pendiente{} & Pendiente \\
-    Frecuencia PWM en RC1               & \SI{1250}{\hertz}                 & \pendiente{} & \pendiente{} & Pendiente \\
-    $T_{on}$ con $DC = 250$             & \SI{200}{\micro\second} (25\,\%) & \pendiente{} & \pendiente{} & Pendiente \\
-    $T_{on}$ con $DC = 500$             & \SI{400}{\micro\second} (50\,\%) & \pendiente{} & \pendiente{} & Pendiente \\
-    $T_{on}$ con $DC = 750$             & \SI{600}{\micro\second} (75\,\%) & \pendiente{} & \pendiente{} & Pendiente \\
-    Duración de rampa 0 $\rightarrow$ 1000 & \SI{2.1}{\second} (21 pasos)  & \pendiente{} & \pendiente{} & Pendiente \\
-    Voltaje en VM con motores girando   & $\leq$ \SI{10}{\volt}            & ---          & \pendiente{} & Pendiente \\
-    VDD del PIC al arrancar motores     & \SI{5}{\volt} $\pm$ \SI{0.25}{\volt} & ---       & \pendiente{} & Pendiente \\
-    EEP (nSLEEP) con motores girando    & \SI{5}{\volt} fijo               & ---          & \pendiente{} & Pendiente \\
-    UART: comando \texttt{F} con eco    & Avance y eco \texttt{F}          & \pendiente{} & \pendiente{} & Pendiente \\
-    Dabble: cruceta $\uparrow$          & Ambas ruedas en avance, LED3 encendido & ---    & \pendiente{} & Pendiente \\
-    \bottomrule
-  \end{tabularx}
-\end{table}
+La frecuencia y la resolución del PWM se verificaron en la simulación
+(sección~\ref{sec:simulacion}): el osciloscopio muestra las dos señales de
+CCP1 y CCP2 al mismo tiempo, con el periodo de \SI{800}{\micro\second}
+calculado en la sección~\ref{sec:calculos}. En la tarjeta la verificación fue
+funcional: el carro cambia de velocidad en pasos de \SI{10}{\percent} con los
+botones del mando. No se registraron mediciones con osciloscopio en el
+hardware.
 
 \subsection{Demostración funcional (rúbrica, criterio 4)}
 
@@ -73,11 +59,20 @@ definitiva quedan para completar.
     \toprule
     \textbf{Maniobra} & \textbf{Comportamiento esperado} & \textbf{Observación} & \textbf{Resultado} \\
     \midrule
-    Avance         & Ambas ruedas hacia adelante, aceleración suave & \pendiente{} & Pendiente \\
-    Reversa        & Ambas ruedas hacia atrás, aceleración suave    & \pendiente{} & Pendiente \\
-    Giro izquierda & Rotación antihoraria sobre su eje              & \pendiente{} & Pendiente \\
-    Giro derecha   & Rotación horaria sobre su eje                  & \pendiente{} & Pendiente \\
-    Freno          & Detención rápida sin reinicio del PIC          & \pendiente{} & Pendiente \\
+    Avance         & Ambas ruedas hacia adelante & Correcto, manejado desde Dabble & Cumple \\
+    Reversa        & Ambas ruedas hacia atrás    & Correcto & Cumple \\
+    Giro izquierda & Giro hacia la izquierda     & En pivote: rueda izquierda frenada, derecha en avance & Cumple \\
+    Giro derecha   & Giro hacia la derecha       & En pivote: rueda derecha frenada, izquierda en avance & Cumple \\
+    Velocidad      & Ajuste desde el mando       & $\triangle$, $\times$ y $\bigcirc$ cambian la velocidad & Cumple \\
+    Detención      & Parada sin reinicio del PIC & El carro se detiene al soltar los controles & Cumple \\
     \bottomrule
   \end{tabularx}
 \end{table}
+
+\subsection{Resultado en la competencia}
+
+El carro completó el recorrido de la competencia del curso manejado desde el
+celular y obtuvo el \textbf{segundo lugar}. El video de la demostración está en
+\url{https://youtube.com/shorts/f3ZtwNBpTU8}. Los movimientos fueron
+correctos pero bruscos: los cambios de velocidad son escalones y los giros en
+pivote obligan a detener una rueda (sección~\ref{sec:conclusiones}).

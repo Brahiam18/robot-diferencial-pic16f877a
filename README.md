@@ -7,9 +7,9 @@ y se maneja desde un celular Android con un **control tipo gamepad** (app Dabble
 Proyecto del Taller Práctico II de *Microcontroladores y Sistemas Embebidos*, Programa de Ingeniería
 Electrónica, Universidad de Ibagué.
 
-> **Estado:** funcional. El carro funcionó completo en la tarjeta del curso y obtuvo el
-> **segundo lugar** en la competencia del curso (noviembre de 2026). Los informes (v0.2) están
-> en borrador: faltan fotografías, capturas de simulación y mediciones.
+> **Estado:** terminado. El carro funcionó completo en la tarjeta del curso y obtuvo el
+> **segundo lugar** en la competencia del curso (noviembre de 2026). Los informes están en su
+> versión final (1.0).
 
 ## Resultado
 

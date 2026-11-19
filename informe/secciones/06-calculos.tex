@@ -179,7 +179,9 @@ y la mezcla diferencial asigna la velocidad de cada rueda, limitada a $\pm 1000$
 \end{equation}
 Así, el joystick hacia adelante ($\theta = 90^\circ$) da $v_{izq} = v_{der} =
 1000$; hacia la derecha ($\theta = 0^\circ$) da $v_{izq} = 1000$, $v_{der} =
--1000$ (giro sobre su eje), y las posiciones intermedias producen curvas. Como
+-1000$ (giro sobre su eje; con \texttt{GIRO\_SOBRE\_EJE = 0} la rueda negativa
+se detiene y el giro es en pivote), y las posiciones intermedias producen
+curvas. Como
 $\theta$ solo toma múltiplos de $15^\circ$, el seno y el coseno se leen de una
 tabla de 24 valores en lugar de calcularse en punto flotante.
 

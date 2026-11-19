@@ -29,6 +29,8 @@ montaje en protoboard como a la tarjeta del curso.
       La batería cae al arrancar los motores; el regulador mantiene estable la lógica mientras su entrada supere unos \SI{7}{\volt}. \\
     Habilitación & EEP (nSLEEP) a \SI{5}{\volt} con cable directo (sección~\ref{sec:eep}). &
       Driver dormido o con habilitación intermitente. \\
+    Soldadura & Por la cara inferior de la tarjeta, que es un plano de cobre a tierra, solo se sueldan los pines de GND. &
+      Un pad soldado por esa cara queda unido al plano: en la primera tarjeta dejó VDD en corto con GND (sección~\ref{sec:depuracion}). \\
     ICSP & MCLR, RB6 y RB7 libres hacia el conector del PICkit~3. &
       Permite reprogramar sin retirar el PIC del montaje. \\
     Reset & \SI{10}{\kilo\ohm} de MCLR a VDD y pulsador NA a GND. &
@@ -97,4 +99,51 @@ Nunca deben usarse dos fuentes a la vez en la línea de \SI{5}{\volt}: si la
 batería está conectada, la opción \emph{VDD On} del PICkit debe estar
 desactivada.
 
-\figurapendiente{Fotografía de la tarjeta montada con motores y HC-05}{fig:montaje}
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.62\textwidth}
+    \centering
+    \includegraphics[height=5.8cm]{figuras/carro-frente.jpg}
+    \caption{Vista frontal: tarjeta del curso sobre el chasis.}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.36\textwidth}
+    \centering
+    \includegraphics[height=5.8cm]{figuras/carro-lateral.jpg}
+    \caption{Vista lateral con el HC-05.}
+  \end{subfigure}
+  \caption{Carro terminado: tarjeta con PIC16F877A, DRV8833 y HC-05 sobre el
+  chasis con dos motorreductores y baterías 18650.}
+  \label{fig:montaje}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.6\textwidth}
+    \centering
+    \includegraphics[height=5.4cm]{figuras/tarjeta-pic-drv8833.jpg}
+    \caption{PIC16F877A (TQFP-44) y conector del DRV8833 (IN1, IN2, VCC, GND, IN3, IN4).}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.38\textwidth}
+    \centering
+    \includegraphics[height=5.4cm]{figuras/tarjeta-reverso.jpg}
+    \caption{Reverso con el módulo DRV8833.}
+  \end{subfigure}
+  \caption{Tarjeta Electrónica Digital II 2026B usada en el montaje.}
+  \label{fig:tarjeta}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.3\textwidth}
+    \centering
+    \includegraphics[height=5.2cm]{figuras/montaje-chasis.jpg}
+    \caption{Armado del chasis y soldadura.}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.66\textwidth}
+    \centering
+    \includegraphics[height=5.2cm]{figuras/programacion-pickit3.jpg}
+    \caption{Grabación de la tarjeta con el PICkit~3.}
+  \end{subfigure}
+  \caption{Proceso de montaje y programación.}
+  \label{fig:proceso}
+\end{figure}

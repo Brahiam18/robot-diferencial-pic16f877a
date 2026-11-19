@@ -9,7 +9,8 @@ simula con un \textbf{L293D}, que tiene la misma tabla de verdad por canal
 (IN1/IN2) y permite validar toda la lógica del firmware. Las diferencias de
 potencia (caída de voltaje, corriente máxima) solo se evalúan en el montaje
 real. El mismo esquemático sirve para el código del docente y para el propio:
-basta con cambiar el \texttt{.hex} que carga el PIC.
+basta con cambiar el \texttt{.hex} que carga el PIC. El proyecto está en el
+repositorio como \texttt{simulacion/\allowbreak robot\_diferencial.pdsprj}.
 
 \begin{table}[H]
   \centering
@@ -21,12 +22,11 @@ basta con cambiar el \texttt{.hex} que carga el PIC.
     \textbf{Elemento} & \textbf{Conexión} & \textbf{Configuración} \\
     \midrule
     PIC16F877A       & Program File = \texttt{.hex} de MPLAB X & Processor Clock Frequency = \SI{20}{\mega\hertz} \\
-    L293D            & IN1 = RC2, IN2 = RD0, IN3 = RC1, IN4 = RD1 & VSS a +\SI{5}{\volt}; VS a +\SI{6}{\volt}; EN1 y EN2 a +\SI{5}{\volt} o a RD2 (emula nSLEEP) \\
+    L293D            & PWM de RC2 y RC1 y dirección de RD0 y RD1 a IN1--IN4 & VSS a +\SI{5}{\volt}; VS a la alimentación de los motores; EN1 y EN2 a +\SI{5}{\volt} \\
     2 $\times$ MOTOR-DC & OUT1/OUT2 y OUT3/OUT4 & Tensión nominal \SI{6}{\volt} \\
-    OSCILLOSCOPE     & A = RC2, B = RC1, C = RD0, D = RD1 & 0.2~ms/div, 2~V/div \\
-    LOGICPROBE       & RD0, RD1 y RD2 & Estado de dirección y habilitación \\
+    OSCILLOSCOPE     & Cuatro canales en las líneas que van al driver & Señales PWM y de dirección \\
     VIRTUAL TERMINAL & TXD $\rightarrow$ RC7, RXD $\rightarrow$ RC6 & 9600~baudios, 8N1 (reemplaza al HC-05) \\
-    RES              & MCLR con \SI{10}{\kilo\ohm} a +\SI{5}{\volt} & Reset \\
+    RES y BUTTON     & MCLR con R1 de \SI{1}{\kilo\ohm} a +\SI{5}{\volt} y pulsador a GND & Reset \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -53,6 +53,28 @@ basta con cambiar el \texttt{.hex} que carga el PIC.
         el hardware.
 \end{enumerate}
 
-\figurapendiente{Esquemático del circuito en Proteus}{fig:proteus-esquematico}
-\figurapendiente{Osciloscopio con PWM al 25\,\%, 50\,\% y 75\,\%}{fig:proteus-pwm}
-\figurapendiente{Terminal virtual con comandos y eco}{fig:proteus-terminal}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figuras/proteus-esquematico.png}
+  \caption{Esquemático en Proteus: PIC16F877A, L293D en lugar del DRV8833,
+  dos motores DC, terminal virtual (HC-05) y osciloscopio.}
+  \label{fig:proteus-esquematico}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figuras/proteus-simulacion.png}
+  \caption{Simulación en marcha: con el comando \texttt{F} enviado desde la
+  terminal virtual, los dos motores giran y el osciloscopio muestra las
+  señales PWM de los dos canales.}
+  \label{fig:proteus-pwm}
+\end{figure}
+
+\subsection{Resultado de la simulación}
+
+La simulación confirmó que los dos canales PWM se generan a la vez desde
+CCP1 y CCP2 y que cada comando enviado desde la terminal virtual produce el
+movimiento esperado en los motores (figura~\ref{fig:proteus-pwm}). Con eso se
+validó la lógica del firmware antes de grabar la tarjeta; las fallas que
+aparecieron después fueron de montaje y de la tarjeta, no de la lógica
+(sección~\ref{sec:depuracion}).

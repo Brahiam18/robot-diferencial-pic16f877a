@@ -29,7 +29,7 @@ sección~\ref{sec:depuracion}.
         nSLEEP en RD2, en 0 durante la configuración y flanco $0 \rightarrow 1$ con \texttt{DRV8833\_Wake()}. \\
     4 & La rúbrica evalúa giro, pero la secuencia base solo tiene avance, reversa y freno. &
         Criterio de demostración incompleto. &
-        Giro a la izquierda y a la derecha sobre su eje agregados a la secuencia. \\
+        Giros a la izquierda y a la derecha agregados a la secuencia: sobre su eje o en pivote, según \texttt{GIRO\_SOBRE\_EJE}; en la tarjeta final, en pivote. \\
     5 & Capacitores de cristal de \SI{44}{\pico\farad} en la lista de materiales. &
         Fuera del rango recomendado de 15 a \SI{33}{\pico\farad}; arranque del oscilador poco confiable. &
         Usar \SI{22}{\pico\farad}, como en el esquemático. \\
