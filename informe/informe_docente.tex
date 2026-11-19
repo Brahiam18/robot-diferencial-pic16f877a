@@ -253,6 +253,41 @@ Los dos programas compilan con MPLAB XC8 sin errores. La lógica del control
 remoto se verificó además en el computador con 22 pruebas automáticas.
 
 % ============================================================================
+\section{Simulación en Proteus}
+\label{c:sim}
+
+Antes de montar el circuito, el firmware se probó en Proteus
+(\texttt{robot\_diferencial.pdsprj}, en la carpeta \texttt{simulacion} del repositorio). Como
+Proteus no trae el DRV8833, se reemplazó por un L293D, que tiene la misma tabla
+de verdad por canal: el PWM de CCP1 (RC2) y CCP2 (RC1) y las líneas de
+dirección RD0 y RD1 llegan a las entradas IN1--IN4, y EN1 y EN2 quedan a
+\SI{5}{\volt}. El HC-05 se reemplazó por una terminal virtual conectada a
+RC6/TX y RC7/RX, desde la que se envían los comandos con letras
+(\texttt{F}, \texttt{B}, \texttt{L}, \texttt{R}, \texttt{S}), y un osciloscopio
+de cuatro canales mide las señales que van al driver.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{proteus-esquematico.png}
+  \caption{Esquemático en Proteus: PIC16F877A, L293D en lugar del DRV8833,
+  dos motores DC, terminal virtual (HC-05) y osciloscopio.}
+  \label{c:fig:proteus-esq}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{proteus-simulacion.png}
+  \caption{Simulación en marcha: con el comando \texttt{F} enviado desde la
+  terminal virtual, los dos motores giran y el osciloscopio muestra las
+  señales PWM de los dos canales.}
+  \label{c:fig:proteus-sim}
+\end{figure}
+
+La simulación confirmó que los dos canales PWM se generan a la vez y que cada
+comando de la terminal produce el movimiento esperado en los motores, antes de
+pasar a la tarjeta física.
+
+% ============================================================================
 \section{Demostración en hardware}
 \label{c:demo}
 
@@ -264,6 +299,7 @@ remoto se verificó además en el computador con 22 pruebas automáticas.
     \toprule
     \textbf{Prueba} & \textbf{Observación} & \textbf{Resultado} \\
     \midrule
+    Prueba del PIC con LEDs & Secuencia de LED1, LED2 y LED3 con \texttt{prueba\_leds.c}. & Correcto \\
     Avance y reversa & Las dos ruedas giran en el sentido pedido. & Correcto \\
     Giro izquierda y derecha & Giro en pivote: una rueda avanza y la otra queda frenada. & Correcto \\
     Control de velocidad & Se sube y baja desde el mando (pasos de \SI{10}{\percent}). & Correcto \\
@@ -272,6 +308,12 @@ remoto se verificó además en el computador con 22 pruebas automáticas.
     \bottomrule
   \end{tabularx}
 \end{table}
+
+Antes de cargar el código de los motores se grabó un programa de prueba
+(\texttt{prueba\_leds.c}, configuración \texttt{leds}) que enciende los tres
+LEDs de la tarjeta en secuencia. Así se comprobó que el PIC, el cristal de
+\SI{20}{\mega\hertz} y la grabación con el PICkit~3 funcionaban, y cualquier
+falla posterior se podía buscar en el driver o en los motores.
 
 \noindent\textbf{Problemas encontrados y solución:}
 \begin{enumerate}
@@ -284,12 +326,27 @@ remoto se verificó además en el computador con 22 pruebas automáticas.
         automático por pérdida de señal.
   \item \emph{Falla al grabar una tarjeta:} PIC dañado por el ICSP conectado
         al revés $\rightarrow$ se trabajó con otra tarjeta.
+  \item \emph{Corto entre VDD y GND en la primera tarjeta:} se soldaron
+        pines por la cara inferior, que es un plano de cobre conectado a
+        tierra; el estaño unió un pad con ese plano y al energizar la tarjeta
+        VDD quedó en corto con GND (figura~\ref{c:fig:corto})
+        $\rightarrow$ se cambió de tarjeta y en la cara inferior solo se
+        soldaron los pines de GND.
   \item \emph{Motor izquierdo siempre encendido:} IN1 en corto con RD2 y RD3
         $\rightarrow$ esos pines como entradas y se retiró el puente de estaño.
   \item \emph{Giros con zumbido y sin movimiento:} al escribir un pin de
         dirección cambiaba el otro (lectura-modificación-escritura del
         puerto~D) $\rightarrow$ registro sombra y giros en pivote.
 \end{enumerate}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[height=3.9cm]{corto-cara-inferior.jpg}
+  \caption{Cara inferior de la primera tarjeta: el pad cuadrado se soldó por
+  este lado y el estaño quedó unido al plano de cobre de tierra que lo rodea,
+  lo que produjo el corto entre VDD y GND.}
+  \label{c:fig:corto}
+\end{figure}
 
 % ============================================================================
 \section{Instrucciones de uso}
@@ -325,11 +382,13 @@ Con la batería conectada, \emph{VDD On} debe estar desactivado. Desmarcar
   \label{c:fig:proceso}
 \end{figure}
 
-\noindent\textbf{Simular.} En Proteus, el DRV8833 se reemplaza por un L293D
-(IN1 = RC2, IN2 = RD0, IN3 = RC1, IN4 = RD1; EN1 y EN2 a \SI{5}{\volt}). El PIC
-se configura a \SI{20}{\mega\hertz} y el osciloscopio en RC2 y RC1 debe mostrar
-un periodo de \SI{800}{\micro\second}. Las RPM positivas indican avance y las
-negativas, reversa.
+\noindent\textbf{Simular.} Abrir \texttt{simulacion/\allowbreak robot\_diferencial.pdsprj}
+en Proteus, cargar en el PIC el archivo \texttt{.hex} compilado y configurar su
+reloj a \SI{20}{\mega\hertz} (sección~\ref{c:sim}). En la terminal virtual se
+escriben los comandos (\texttt{F}, \texttt{B}, \texttt{L}, \texttt{R},
+\texttt{S}); el osciloscopio debe mostrar un periodo de
+\SI{800}{\micro\second}. Las RPM positivas indican avance y las negativas,
+reversa.
 
 \noindent\textbf{Manejar desde el celular.} Vincular el HC-05 en los ajustes de
 Bluetooth de un celular Android (clave 1234 o 0000). En la app \emph{Dabble}

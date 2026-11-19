@@ -19,7 +19,9 @@ Electrónica, Universidad de Ibagué.
 cambio de velocidad desde el mando de Dabble por Bluetooth.
 
 - **Segundo lugar** en la competencia del curso.
-- Fallas resueltas en el montaje: pin EEP (nSLEEP) sin conexión en la tarjeta, corto entre IN1 y
+- Antes del firmware de los motores se cargó `prueba_leds.c` para comprobar el PIC, el cristal y la grabación.
+- Fallas resueltas en el montaje: corto entre VDD y GND en la primera tarjeta por soldar por la cara
+  inferior (plano de tierra; se cambió de tarjeta y por esa cara solo se sueldan los pines de GND), pin EEP (nSLEEP) sin conexión en la tarjeta, corto entre IN1 y
   RD2/RD3, lectura-modificación-escritura del puerto D (resuelta con un registro sombra) y
   velocidad del HC-05 distinta a la del PIC (detección automática de baudios).
 
@@ -123,8 +125,14 @@ hacia la marca de la tarjeta: al revés aplica ~13 V en RB3/PGM y daña el PIC.
 
 ## Simulación
 
-En Proteus el DRV8833 se reemplaza por un **L293D** (misma tabla de verdad por canal), el HC-05 por
-una **Virtual Terminal** a 9600 baudios, y el PWM se verifica con el osciloscopio en RC2 y RC1.
+El proyecto de Proteus está en [`simulacion/robot_diferencial.pdsprj`](simulacion/robot_diferencial.pdsprj).
+El DRV8833 se reemplaza por un **L293D** (misma tabla de verdad por canal), el HC-05 por una
+**Virtual Terminal** a 9600 baudios (comandos `F B L R S`), y el PWM se verifica con el osciloscopio.
+Para simular: cargar en el PIC el `.hex` compilado y poner su reloj en 20 MHz.
+
+![Esquemático en Proteus](informe/figuras/proteus-esquematico.png)
+
+![Simulación en marcha](informe/figuras/proteus-simulacion.png)
 
 ## Informe técnico
 
@@ -147,6 +155,8 @@ Instrucciones para compilarlos en [`informe/README.md`](informe/README.md).
 │   ├── codigo_docente.c              # Código de la guía
 │   ├── prueba_leds.c                 # Prueba de montaje
 │   └── versiones-previas/            # Versiones sin PWM (XC8 y CCS)
+├── simulacion/
+│   └── robot_diferencial.pdsprj      # Proyecto de Proteus
 └── informe/                          # Informe técnico en LaTeX
     ├── main.tex                      # Informe completo
     ├── informe_docente.tex           # Informe corto
